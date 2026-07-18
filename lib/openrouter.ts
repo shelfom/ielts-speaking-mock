@@ -52,33 +52,45 @@ export async function createSpeech(text: string): Promise<ArrayBuffer> {
   });
   if (!response.ok) throw new Error(`Coze TTS ${response.status}: ${await response.text()}`);
 
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("No response body from Coze TTS");
+  const contentType = response.headers.get("content-type") || "";
+  const fullText = await response.text();
 
-  const decoder = new TextDecoder();
   let audioData = "";
-  let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
+  // Handle SSE format: multiple "data: {...}" lines
+  if (contentType.includes("text/event-stream") || fullText.includes("\ndata: ") || fullText.startsWith("data: ")) {
+    const lines = fullText.split("\n");
     for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const payload = line.slice(6).trim();
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
       if (!payload || payload === "[DONE]") continue;
       try {
         const evt = JSON.parse(payload);
-        if (evt?.data && typeof evt.data === "string" && evt.data.length > 100) {
+        if (evt?.code !== undefined && evt.code !== 0) {
+          throw new Error(`Coze TTS error code ${evt.code}: ${evt.msg || "unknown"}`);
+        }
+        if (typeof evt?.data === "string" && evt.data.length > 0) {
           audioData += evt.data;
         }
-      } catch {
-        // skip malformed SSE events
+      } catch (parseErr) {
+        if (parseErr instanceof Error && parseErr.message.startsWith("Coze TTS error")) throw parseErr;
+        // skip malformed JSON lines
       }
+    }
+  } else {
+    // Handle single JSON response
+    try {
+      const evt = JSON.parse(fullText);
+      if (evt?.code !== undefined && evt.code !== 0) {
+        throw new Error(`Coze TTS error code ${evt.code}: ${evt.msg || "unknown"}`);
+      }
+      if (typeof evt?.data === "string") {
+        audioData = evt.data;
+      }
+    } catch (parseErr) {
+      if (parseErr instanceof Error && parseErr.message.startsWith("Coze TTS error")) throw parseErr;
+      throw new Error(`Failed to parse Coze TTS response: ${fullText.slice(0, 200)}`);
     }
   }
 
