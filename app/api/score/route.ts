@@ -24,18 +24,18 @@ const CRITERIA: Criterion[] = [...criterionKeys];
 const EVALUATOR_A_MODELS = Array.from(new Set([
   process.env.OPENROUTER_SCORING_MODEL_A ||
     process.env.OPENROUTER_SCORING_MODEL ||
-    "anthropic/claude-sonnet-4.5",
+    "openai/gpt-4.1",
+  "anthropic/claude-sonnet-4.5",
   "qwen/qwen3.7-max",
-  "openai/gpt-5-mini"
 ]));
 const EVALUATOR_B_MODELS = Array.from(new Set([
   process.env.OPENROUTER_SCORING_MODEL_B || "qwen/qwen3.6-flash",
-  "openai/gpt-5-mini",
+  "openai/gpt-4.1-mini",
   "anthropic/claude-sonnet-4.5"
 ]));
 const ADJUDICATOR_MODELS = Array.from(new Set([
-  process.env.OPENROUTER_ADJUDICATION_MODEL || "anthropic/claude-sonnet-4.5",
-  "openai/gpt-5-mini",
+  process.env.OPENROUTER_ADJUDICATION_MODEL || "openai/gpt-4.1",
+  "anthropic/claude-sonnet-4.5",
   "qwen/qwen3.7-max"
 ]));
 
@@ -201,7 +201,8 @@ async function scoreEvaluator(
       timeoutMs: 50000,
       maxAttempts: 1,
       maxTokens: 1800,
-      reasoningEffort: "minimal",
+      reasoningEffort: "none",
+      requireParameters: false,
       signal,
       responseMode: "json_object",
       contract: {
@@ -262,7 +263,8 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     timeoutMs: 25000,
     maxAttempts: 1,
     maxTokens: 700,
-    reasoningEffort: "minimal",
+    reasoningEffort: "none",
+    requireParameters: false,
     signal,
     responseMode: "json_object",
     contract: {
