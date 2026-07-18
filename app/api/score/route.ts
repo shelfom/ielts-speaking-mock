@@ -29,7 +29,7 @@ const EVALUATOR_A_MODELS = Array.from(new Set([
   "openai/gpt-5-mini"
 ]));
 const EVALUATOR_B_MODELS = Array.from(new Set([
-  process.env.OPENROUTER_SCORING_MODEL_B || "google/gemini-3-flash-preview",
+  process.env.OPENROUTER_SCORING_MODEL_B || "qwen/qwen3.6-flash",
   "openai/gpt-5-mini",
   "anthropic/claude-sonnet-4.5"
 ]));
