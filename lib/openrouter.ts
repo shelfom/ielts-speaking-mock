@@ -16,6 +16,7 @@ type ChatJsonOptions<T> = {
   maxAttempts?: number;
   maxTokens?: number;
   requireParameters?: boolean;
+  reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high";
 };
 
 export class OpenRouterRequestError extends Error {
@@ -123,6 +124,14 @@ export async function chatJson<T>(
           }
         },
         plugins: [{ id: "response-healing" }],
+        ...(options.reasoningEffort
+          ? {
+              reasoning: {
+                effort: options.reasoningEffort,
+                exclude: true
+              }
+            }
+          : {}),
         provider: {
           allow_fallbacks: true,
           require_parameters: options.requireParameters ?? true,

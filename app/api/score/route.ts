@@ -80,6 +80,32 @@ const OFFICIAL_ANCHORS: Array<{
   }
 ];
 
+function withDeadline<T>(
+  promise: Promise<T>,
+  milliseconds: number,
+  code: string
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new OpenRouterRequestError({
+        message: `${code} exceeded the public request budget`,
+        retryable: true,
+        code
+      }));
+    }, milliseconds);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 function matchedOfficialAnchor(session: any): Record<Criterion, number> | null {
   const transcript = (session?.analyses || [])
     .map((item: any) => item?.transcript || "")
@@ -177,6 +203,7 @@ async function scoreEvaluator(
     timeoutMs: 50000,
     maxAttempts: 1,
     maxTokens: 4200,
+    reasoningEffort: "minimal",
     contract: {
       name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
       schema: evaluatorJsonSchema,
@@ -221,6 +248,7 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     timeoutMs: 25000,
     maxAttempts: 1,
     maxTokens: 2200,
+    reasoningEffort: "minimal",
     contract: {
       name: "ielts_speaking_adjudication",
       schema: adjudicationJsonSchema,
@@ -241,10 +269,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const [a, b] = await Promise.all([
+    const [a, b] = await withDeadline(Promise.all([
       scoreEvaluator("A", session, EVALUATOR_A_MODELS),
       scoreEvaluator("B", session, EVALUATOR_B_MODELS)
-    ]);
+    ]), 55000, "EVALUATION_DEADLINE");
 
     if (a.evidence_status !== "complete" || b.evidence_status !== "complete") {
       return NextResponse.json({
@@ -280,7 +308,11 @@ export async function POST(request: NextRequest) {
       }
     }
     if (disputedCriteria.length) {
-      const adjudication = await adjudicate(disputedCriteria, a, b, session);
+      const adjudication = await withDeadline(
+        adjudicate(disputedCriteria, a, b, session),
+        20000,
+        "ADJUDICATION_DEADLINE"
+      );
       const byCriterion = new Map(
         adjudication.results.map((item) => [item.criterion, item])
       );
