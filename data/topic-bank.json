@@ -5,7 +5,7 @@
     "part3": 57,
     "part1Prompts": 199,
     "part2Prompts": 640,
-    "part3Prompts": 298
+    "part3Prompts": 355
   },
   "part1": [
     {
@@ -1882,6 +1882,7 @@
       "sourceRow": 1,
       "prompts": [
         "In what situations do you think people need to (or, should) apologise?",
+        "Time When Someone Apologised to You",
         "What do you think of those people who don\u2019t apologise very often?",
         "What kinds of people are most likely to say sorry?"
       ]
@@ -1892,6 +1893,7 @@
       "prompts": [
         "Do you think it\u2019s good that new inventions are appearing so often?",
         "Do you think science can change our society?",
+        "Do you think science is important?",
         "Do you think there will be any negative effects resulting from future technology?",
         "Which area of science has been the most important in the last one hundred years?",
         "Why do you think some inventions have not been successful in the marketplace?"
@@ -1904,6 +1906,7 @@
         "Do you think shopping habits are likely to change in the future?",
         "How have shopping habits changed over recent years?",
         "Is service better in large shops or in small shops?",
+        "Is shopping a popular activity in your country?",
         "To what extent do you think advertising affects the way people shop?",
         "What do people do when they get bad service?",
         "Why do some people prefer to purchase brand name products produced abroad?"
@@ -1918,6 +1921,7 @@
         "What about poverty? What can be done to alleviate poverty?",
         "What is the difference between major and minor crime?",
         "What problems does overpopulation cause?",
+        "What social problems are there in your country?",
         "Why do so many people move to live in cities?"
       ]
     },
@@ -1925,6 +1929,7 @@
       "topic": "Something Difficult to Use",
       "sourceRow": 5,
       "prompts": [
+        "Do you often buy new things?",
         "Do you think old(er) people have difficulties using some things that young people do not?",
         "Would you say that advertising makes people buy more news things than they would if there was no advertising?"
       ]
@@ -1938,6 +1943,7 @@
         "How are the Olympic players trained in your country? Do they usually start training when they are born?",
         "In your opinion, what are the benefits of playing a sport?",
         "What about cultural aspects? How can sports bring people from different countries closer together?",
+        "What types of sports are popular in your country?",
         "Why would somebody dislike watching the Olympic Games?"
       ]
     },
@@ -1950,7 +1956,8 @@
         "Do you think state or private television is better?",
         "How has TV changed our lives?",
         "How popular is watching television in your country?",
-        "Should children be allowed to watch a lot of TV?"
+        "Should children be allowed to watch a lot of TV?",
+        "Tell me about the types of programmes that are generally on television in your country."
       ]
     },
     {
@@ -1961,6 +1968,7 @@
         "Have the ways that people communicated with each other changed much in the last few decades?",
         "What can individuals do for scientific research?",
         "What influence can international cooperation in science bring about?",
+        "What\u2019s the best invention in the past hundred years?",
         "What\u2019s the influence of science on human life?",
         "Why do some people dislike using text messages?"
       ]
@@ -1972,6 +1980,7 @@
         "Do advertisements give correct information, or do they encourage people to buy things that they may not need?",
         "Were different possessions thought of as valuable in the past?",
         "What can be done to reduce traffic noise?",
+        "What kinds of possessions are considered high-status to people in your country?",
         "What may happen when someone listens to very loud music using headphones while they are running or hiking?",
         "Where can people hear a lot of noise?",
         "Why do you think people need to show their status in society?"
@@ -1986,7 +1995,8 @@
         "Do you think it is necessary to protect traditions?",
         "Do you think the government should help in the promotion of traditional products?",
         "Do you think there are benefits of traditional products to locals?",
-        "In your opinion, why do traditional products attract tourists?"
+        "In your opinion, why do traditional products attract tourists?",
+        "What different types of traditional products are produced in your country?"
       ]
     },
     {
@@ -1997,6 +2007,7 @@
         "Do you think transportation is likely to continue to improve in the future?",
         "Have the types of transport people use changed much over the last few decades?",
         "Have the types of transportation people use changed much over the last few decades?",
+        "How do most people travel long distances in your country?",
         "How has transportation improved in recent years?",
         "What kinds of improvement have there been in transport in your country in recent years?"
       ]
@@ -2008,7 +2019,8 @@
         "As we know organic fruits and vegetables are more expensive than conventional fruits and vegetables, but they are actually worth the extra cost. Do you think organic fruit deserves a higher price?",
         "Do people like to grow vegetables in your country?",
         "Do you think the government should encourage farmers to grow more organic vegetables?",
-        "How do people feel when they eat vegetables that they grew on their own?"
+        "How do people feel when they eat vegetables that they grew on their own?",
+        "What vegetables are common in your country?"
       ]
     },
     {
@@ -2017,6 +2029,7 @@
       "prompts": [
         "Do you think people need to be challenged?",
         "How do (young people) handle difficult or challenging tasks?",
+        "What challenges do young people face today?",
         "Which do you think is better, to face these difficulties and challenges alone or to seek the help of others?"
       ]
     },
@@ -2028,6 +2041,7 @@
         "How does advertising influence children?",
         "Is advertising really necessary in modern society?",
         "Is there any advertising that can be harmful to children?",
+        "What are popular types of advertising in today\u2019s world?",
         "What factors should be taken into account when making advertisements?",
         "What type of media advertising do you like most?"
       ]
@@ -2041,6 +2055,7 @@
         "What is it like to be a professional athlete?",
         "What should we do to protect endangered animals?",
         "What would happen when some species disappear on earth?",
+        "Why do people like to keep pets?",
         "Why do some people refuse to eat animals?"
       ]
     },
@@ -2051,6 +2066,7 @@
         "Do people in your country prefer music over art?",
         "Do you think the government should provide support for art and cultural activities?",
         "How can children benefit from learning about art?",
+        "How do people in your country feel about art?",
         "How has art changed in the past few decades in your country?",
         "Let\u2019s move on from art in your country to art education. Do you think children should study art in school?",
         "What are some traditional art forms in your country?"
@@ -2060,6 +2076,7 @@
       "topic": "books",
       "sourceRow": 17,
       "prompts": [
+        "Do people read more nowadays?",
         "Do you like reading the traditional literature of your country?",
         "Do you prefer books or movies?",
         "Do you read before going to bed?",
@@ -2074,6 +2091,7 @@
       "prompts": [
         "Finally, let\u2019s talk about globalisation. What are the impacts of globalisation on small and large businesses?",
         "How do business people relax?",
+        "In your opinion, do business people have to work long hours?",
         "In your opinion, what kind of small businesses will young people have in the future?",
         "In your opinion, what skills are required to start a small business?",
         "Let\u2019s move on to the topic of small businesses. How can a small business grow big?",
@@ -2084,6 +2102,7 @@
       "topic": "change",
       "sourceRow": 19,
       "prompts": [
+        "Do you think change is good?",
         "In what ways have changes in technology changed people\u2019s lives?",
         "Is your country changing rapidly?",
         "What are some of the major changes that occur to people throughout their lives?",
@@ -2096,6 +2115,7 @@
       "prompts": [
         "Do you think there will be more tall buildings in the future?",
         "How can governments improve living standards in crowded cities?",
+        "In your opinion, what makes a city a good one to live in?",
         "Let\u2019s move on from the positive aspects of cities to the negative aspects of cities. In your opinion, what are the negative aspects of crowded cities?",
         "What about air quality? What can people do to improve the air quality in the city?",
         "What are the advantages and disadvantages of living in tall buildings?",
@@ -2106,6 +2126,7 @@
       "topic": "clothes",
       "sourceRow": 21,
       "prompts": [
+        "Can clothing tell you much about a person in your country?",
         "Do people still wear traditional clothing in your country?",
         "Do you think people are treated differently when they are in uniform?",
         "For which jobs are people required to wear a uniform in your country?",
@@ -2123,6 +2144,7 @@
         "Let\u2019s move on to the topic of companies\u2019 services. How can a company maintain the quality of the service that it gives to the public?",
         "Should big companies be punished more seriously than small companies?",
         "What are the good things about working for a big company?",
+        "What is the difference between big companies and small companies?",
         "Why do some people choose to work at an international company?"
       ]
     },
@@ -2134,6 +2156,7 @@
         "Do you believe that engaging in artistic activities might make people happier? (Why/Why not)",
         "Do you think money makes people happy?",
         "Do you think people who have more talent are happier than others? (Why/Why not)",
+        "What are a few things that make you happy?",
         "What are the benefits of getting up early?",
         "Why do some people like to stay up late?"
       ]
@@ -2146,6 +2169,7 @@
         "How important is it to get advice from other people when making decisions?",
         "Is it better to make a decision thinking about what you want or thinking about what other people want?",
         "What are some of the most important decisions young people have to make?",
+        "Why do some people find it hard to make decisions?",
         "Why is it sometimes difficult to accept advice?"
       ]
     },
@@ -2154,7 +2178,8 @@
       "sourceRow": 25,
       "prompts": [
         "Do you think it\u2019s important for people to socialise with their neighbours?",
-        "How do people socialise with their neighbours?"
+        "How do people socialise with their neighbours?",
+        "Why do old people not like changes?"
       ]
     },
     {
@@ -2162,6 +2187,7 @@
       "sourceRow": 26,
       "prompts": [
         "Do you think people spend too much money on electronic devices?",
+        "How are education priorities today different from those in the past?",
         "How can the type of school you go to affect career success?",
         "What are the most popular electronic devices in today\u2019s world?",
         "What changes do you think will happen in the classroom in the near future?",
@@ -2173,6 +2199,7 @@
       "topic": "entertainment",
       "sourceRow": 27,
       "prompts": [
+        "Do you think traditional performances are important?",
         "How do you think watching a dance performance or a stage play influences children?",
         "What do you think is the difference between watching a live performance and watching it on TV?"
       ]
@@ -2186,6 +2213,7 @@
         "How can people protect the environment?",
         "Is water pollution a problem in your country?",
         "What are some of the causes of water pollution?",
+        "What are some of the main environmental problems in your county?",
         "Why should people be concerned about the environment?"
       ]
     },
@@ -2195,6 +2223,7 @@
       "prompts": [
         "How do you think families will change in the future?",
         "How has the size of the average family changed in your country in the last few decades?",
+        "Is family important in your country?",
         "Should husbands and wives have different roles within the family?",
         "What qualities does a person need to have to take care of old people?",
         "What role do grandparents play in the family in your country?",
@@ -2209,7 +2238,8 @@
         "Do you think it is wrong for children to not celebrate traditional festivals?",
         "Do you think teens should learn about traditions?",
         "Do you think the traditions in your country are restricted, especially for women in any sense?",
-        "What is the difference between festivals that are celebrated now and in the past?"
+        "What is the difference between festivals that are celebrated now and in the past?",
+        "What is the importance of traditional festivals?"
       ]
     },
     {
@@ -2220,6 +2250,7 @@
         "In your country, is it important to have a meal together with your family?",
         "Is food now better than in the past?",
         "What about foreign food? What kinds of foreign food are popular in your country?",
+        "What are the types of food that people eat in your country?",
         "What kind of people would like to go to a cafe?",
         "Why do young people like studying in a cafe instead of at home?"
       ]
@@ -2231,6 +2262,7 @@
         "Do you think it is always better to talk to your friends about such a problem?",
         "If you had a problem, would you go to your friends or family? Why?",
         "Is it important to have friends from other countries?",
+        "What is the importance of friends?",
         "Would you like to have a few very good friends or a lot of just friends?"
       ]
     },
@@ -2240,7 +2272,8 @@
       "prompts": [
         "Do people in your country prefer traditional or modern styles of furniture?",
         "How do people in your country decide what furniture to buy for the home or office?",
-        "In families in your country, who usually decides what furniture to buy for the home?"
+        "In families in your country, who usually decides what furniture to buy for the home?",
+        "In what situations do people in your country buy furniture?"
       ]
     },
     {
@@ -2251,6 +2284,7 @@
         "Do you think all illnesses can be prevented?",
         "Do you think healthcare should be free?",
         "Do you think that illnesses will be less common in the future?",
+        "How can people improve their health?",
         "What makes someone a good doctor?",
         "Why is it that different people want to see different magazines?"
       ]
@@ -2260,6 +2294,7 @@
       "sourceRow": 35,
       "prompts": [
         "Do people today trust others as much as they used to in the past?",
+        "Do you like helping others?",
         "Do you think people are less willing to help others these days compared to the past?",
         "How do people in your community help each other?",
         "In your opinion, how can we encourage children to help others?",
@@ -2272,6 +2307,7 @@
       "sourceRow": 36,
       "prompts": [
         "Do you like to learn about history?",
+        "Do you think history is important?",
         "Do you think people can learn history from films or TV programs?",
         "Do you think the internet is a good place to learn about history?",
         "In your opinion, how can people learn about history?",
@@ -2284,6 +2320,7 @@
       "sourceRow": 37,
       "prompts": [
         "Do you think is it better to take a holiday in your own country or in a foreign country?",
+        "First of all, why do people go on holiday?",
         "How have holidays changed over the past few decades?",
         "How important is it for families to go on holiday together?",
         "What kind of holidays will be popular in the future?",
@@ -2300,7 +2337,8 @@
         "How easy is it to find a place to live in your country?",
         "Is it good to move to a new place frequently? Why?",
         "What are the advantages and disadvantages of living in the same place?",
-        "What problems do people face after moving to a new place?"
+        "What problems do people face after moving to a new place?",
+        "Why do people move to a new home?"
       ]
     },
     {
@@ -2311,6 +2349,7 @@
         "What do you think young people will be influenced by the most in the future?",
         "What type of people, such as parents, teachers, or friends, are best to influence young people\u2019s behaviour?",
         "What type of person (parents, teachers, friends etc) are best to influence young people\u2019s behaviour?",
+        "What types of people influence the young in your country?",
         "Why is it important for young people to have role models?",
         "Why is it important to have role models?"
       ]
@@ -2320,6 +2359,7 @@
       "sourceRow": 40,
       "prompts": [
         "Do you think parents should supervise their children\u2019s use of the Internet?",
+        "How do you think the Internet will change people\u2019s buying habits in the future?",
         "Is the Internet important for education?",
         "What are the pros and cons of shopping online?",
         "What do you think people do on the Internet?",
@@ -2332,6 +2372,7 @@
       "sourceRow": 41,
       "prompts": [
         "Do you think job satisfaction is more important than your salary when choosing a job?",
+        "How do you think AI (artificial intelligence) will affect people\u2019s work?",
         "Is it common in your country for people to move to other cities because of work?",
         "That technology will make some people lose their jobs. How do you think this problem should be handled?",
         "What would you say are the important factors to consider when choosing a career?",
@@ -2347,7 +2388,8 @@
         "Do you think computers make it easier or more difficult to manage time?",
         "Do you think it is easy to manage your time in the modern world?",
         "How can modern technology help people arrive early?",
-        "What is an example of a time when it is very important for people to arrive on time in your country?"
+        "What is an example of a time when it is very important for people to arrive on time in your country?",
+        "What is the general attitude towards arriving somewhere late in your country?"
       ]
     },
     {
@@ -2357,6 +2399,7 @@
         "Are the types of leisure activities that are popular today the same as those that were popular when your parents were young?",
         "Do you think (watching) films have (has) any educational benefits?",
         "In what ways are documentary films and films only for entertainment different?",
+        "What types of leisure activities are popular in your country?",
         "What types of leisure activities may become more popular in the future?",
         "Why are some activities more popular than others?",
         "Why is it important for people to have time for leisure activities?"
@@ -2371,7 +2414,8 @@
         "How have developments in technology affected employment in your country?",
         "How have these machines benefited people? Are there any negative effects of using them?",
         "Let\u2019s move on to technology. Do you think people rely too much on technology?",
-        "Some people think that technology has brought more stress than benefits to employed people nowadays. Do you agree or disagree with this statement?"
+        "Some people think that technology has brought more stress than benefits to employed people nowadays. Do you agree or disagree with this statement?",
+        "What kinds of machines are used for housework in modern homes in your country?"
       ]
     },
     {
@@ -2379,6 +2423,7 @@
       "sourceRow": 45,
       "prompts": [
         "Are there any things that are especially important for people to memorise?",
+        "Do you think it\u2019s important to have a good memory?",
         "What can you do to learn more about your family history?",
         "Which do you think is more important to remember, a business meeting or a meeting with a friend?",
         "Why do people want to remember their family history?",
@@ -2389,6 +2434,7 @@
       "topic": "mobile phones",
       "sourceRow": 46,
       "prompts": [
+        "Do you think there should be regulations on the use of mobile phones?",
         "What (minimum) age do you think is appropriate for owning a cell phone?",
         "What do you think of primary school students owning a mobile phone?"
       ]
@@ -2399,6 +2445,7 @@
       "prompts": [
         "Do you think it is important to teach children money skills?",
         "How do you think parents can teach the value of money to their children?",
+        "Is money important to you?",
         "Should we let children buy whatever they want with money they\u2019ve saved?",
         "What is the relationship between money and power?"
       ]
@@ -2412,7 +2459,8 @@
         "How does pop music now compare to when you were growing up?",
         "Is foreign music or music from your country more popular with people your age?",
         "There\u2019s a lot of pirated music. Do you agree that we should support official music?",
-        "What are some possible advantages and disadvantages of being stricter about the illegal downloading of music?"
+        "What are some possible advantages and disadvantages of being stricter about the illegal downloading of music?",
+        "What kind of music is popular in your country?"
       ]
     },
     {
@@ -2420,6 +2468,7 @@
       "sourceRow": 49,
       "prompts": [
         "Do you believe everything you read in the newspaper?",
+        "How do people get their news in today\u2019s society?",
         "How do people share good news?",
         "How do you think people will get their news in the future?",
         "How does modern technology affect the delivery of news?",
@@ -2434,7 +2483,8 @@
         "Do you think hitting children is sometimes necessary for discipline?",
         "Do you think mothers and fathers have different roles to play in bringing up a child?",
         "Do you think parents spend too much on buying toys for their children?",
-        "Do you think sweets are a good thing to reward children with?"
+        "Do you think sweets are a good thing to reward children with?",
+        "For parents, what is important when bringing up their children?"
       ]
     },
     {
@@ -2445,6 +2495,7 @@
         "In some places people spend a lot of money on parties that celebrate special family events. Is this ever true in your country? Do you think this is a good trend or a bad trend?",
         "What are the main reasons why people organise family parties in your country?",
         "What makes a good party?",
+        "When do people usually have parties in your country?",
         "Why do some people think that national celebrations are a waste of government money? Do you agree or disagree with this view? Why?"
       ]
     },
@@ -2456,6 +2507,7 @@
         "Do you think it\u2019s important for young people to get advice from their parents when planning a career?",
         "Do you think people should make highly detailed plans or just general plans?",
         "How do most people plan their futures in their education and careers?",
+        "In general, do you think planning is important?",
         "What types of people like to make plans?",
         "Why do you think some people dislike making plans?"
       ]
@@ -2469,13 +2521,15 @@
         "In your opinion, why do some people like to buy imported products?",
         "What are some famous local products in your country?",
         "What are the disadvantages of a country producing everything it needs?",
-        "What are the impacts of globalisation on international trade?"
+        "What are the impacts of globalisation on international trade?",
+        "What kinds of products are mostly imported into your country?"
       ]
     },
     {
       "topic": "restaurants",
       "sourceRow": 54,
       "prompts": [
+        "Do many people eat in restaurants in your country?",
         "Do you like to cook at home?",
         "Is it expensive to eat out in your country?",
         "Nowadays, more and more people are unwilling to cook. Why is this happening?",
@@ -2490,7 +2544,8 @@
         "Do you think it\u2019s necessary to set up rules about overworking people?",
         "Do you think that the students themselves should have a say in what kinds of school rules there are?",
         "What are some examples of rules that exist in many families?",
-        "What are some rules that exist in schools or workplaces in your country?"
+        "What are some rules that exist in schools or workplaces in your country?",
+        "Why do we have rules in society?"
       ]
     },
     {
@@ -2498,6 +2553,7 @@
       "sourceRow": 56,
       "prompts": [
         "Can you compare the education your parents had with the education that you received?",
+        "Is higher education too expensive in your country?",
         "Should all students pay for their university education?",
         "What advantages do universities bring to society?",
         "What changes do you think will happen in the classrooms of the near future?",
@@ -2509,6 +2565,7 @@
       "topic": "social events",
       "sourceRow": 57,
       "prompts": [
+        "Can you compare some exciting activities people do now with activities people did 20 years ago?",
         "Do people in your country spend a lot of money on celebrating birthdays?",
         "Do you think it\u2019s best to do new things on your own or with other people?",
         "Do you think some dangerous activities should be banned?",

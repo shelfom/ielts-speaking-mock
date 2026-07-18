@@ -360,12 +360,8 @@ export default function Home() {
       });
       if (!response.ok) throw new Error();
       const { audioUri } = await response.json();
-      if (!audioUri) throw new Error("No audio URI returned");
       const audio = new Audio(audioUri);
       audio.onended = () => {
-        setFeedbackPlaying(false);
-      };
-      audio.onerror = () => {
         setFeedbackPlaying(false);
       };
       await audio.play();

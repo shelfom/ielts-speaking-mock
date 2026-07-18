@@ -1,125 +1,99 @@
-const COZE_BASE_URL = process.env.COZE_INTEGRATION_MODEL_BASE_URL || "https://integration.coze.cn/api/v3";
-const COZE_API_TOKEN = process.env.COZE_LOOP_API_TOKEN || "";
-const SCORING_MODEL = process.env.OPENROUTER_SCORING_MODEL || "deepseek-v3-2-251201";
+const ENDPOINT = "https://openrouter.ai/api/v1";
 
-export async function chatJson(messages: { role: string; content: string }[]): Promise<Record<string, unknown>> {
-  const res = await fetch(`${COZE_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${COZE_API_TOKEN}`,
-    },
-    body: JSON.stringify({
-      model: SCORING_MODEL,
-      messages,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`LLM ${res.status}: ${text.slice(0, 300)}`);
-  }
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content || "";
-  return JSON.parse(content);
+function apiKey(): string {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY is not configured");
+  return key;
 }
 
-export async function asrTranscribe(audioBuffer: Buffer, _mimeType: string): Promise<string> {
-  const baseUrl = process.env.COZE_INTEGRATION_BASE_URL || "https://integration.coze.cn";
-  const apiToken = process.env.COZE_WORKLOAD_IDENTITY_API_KEY || process.env.COZE_LOOP_API_TOKEN || "";
-  const base64Data = audioBuffer.toString("base64");
-
-  const requestBody = {
-    user: { uid: "ielts-mock-examiner" },
-    audio: { data: base64Data },
-  };
-
-  const res = await fetch(`${baseUrl}/api/v3/auc/bigmodel/recognize/flash`, {
+export async function chatJson(messages: unknown[], model = process.env.OPENROUTER_SCORING_MODEL || "qwen/qwen3.7-max") {
+  const response = await fetch(`${ENDPOINT}/chat/completions`, {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${apiKey()}`,
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiToken}`,
+      "HTTP-Referer": "https://ielts-speaking-mock.coze.site",
+      "X-Title": "TB IELTS Speaking Mock Examiner"
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0,
+      response_format: { type: "json_object" }
+    }),
+    signal: AbortSignal.timeout(180000)
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`ASR ${res.status}: ${errText.slice(0, 300)}`);
-  }
-
-  // Check custom status header
-  const apiStatus = res.headers.get("x-api-status-code") || "0";
-  if (apiStatus !== "20000000") {
-    const apiMessage = res.headers.get("x-api-message") || "unknown error";
-    throw new Error(`ASR failed: ${apiStatus} - ${apiMessage}`);
-  }
-
-  const data = await res.json();
-  return data.result?.text || "";
+  if (!response.ok) throw new Error(`OpenRouter ${response.status}: ${await response.text()}`);
+  const payload = await response.json();
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") throw new Error("Evaluator returned no JSON content");
+  return JSON.parse(content.replace(/^```json\s*|\s*```$/g, ""));
 }
 
 export async function createSpeech(text: string): Promise<{ audioUri: string; audioSize: number }> {
   const baseUrl = process.env.COZE_INTEGRATION_BASE_URL || "https://integration.coze.cn";
-  const apiToken = process.env.COZE_WORKLOAD_IDENTITY_API_KEY || process.env.COZE_LOOP_API_TOKEN || "";
-  
-  const requestBody = {
-    user: { uid: "ielts-mock-examiner" },
-    req_params: {
-      speaker: "zh_female_xiaohe_uranus_bigtts",
-      text,
-      audio_params: {
-        format: "mp3",
-        sample_rate: 24000,
-        speech_rate: 0,
-        loudness_rate: 0,
-      },
-    },
-  };
+  const token = process.env.COZE_WORKLOAD_IDENTITY_API_KEY || process.env.COZE_LOOP_API_TOKEN;
+  if (!token) throw new Error("Coze API token not configured");
 
-  const res = await fetch(`${baseUrl}/api/v3/tts/unidirectional`, {
+  const response = await fetch(`${baseUrl}/api/v3/tts/unidirectional`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiToken}`,
-      "Connection": "keep-alive",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`TTS ${res.status}: ${errText.slice(0, 300)}`);
-  }
-
-  // Response is a stream of SSE events
-  // code=0: audio chunk (base64 data)
-  // code=20000000: final event with url and size
-  const responseText = await res.text();
-  const lines = responseText.split("\n");
-  
-  for (const line of lines) {
-    if (line.startsWith("data:")) {
-      try {
-        const data = JSON.parse(line.slice(5).trim());
-        if (data.code === 20000000 && data.url) {
-          return {
-            audioUri: data.url,
-            audioSize: data.size || 0,
-          };
-        }
-        if (data.code && data.code !== 0 && data.code !== 20000000) {
-          throw new Error(`TTS synthesis failed: ${data.message || "unknown error"}`);
-        }
-      } catch (e) {
-        if (e instanceof Error && e.message.includes("TTS synthesis failed")) {
-          throw e;
-        }
-        // Continue parsing
+    body: JSON.stringify({
+      req_params: {
+        audio_params: { format: "mp3", sample_rate: 24000, speech_rate: 0, loudness_rate: 0 },
+        text,
+        speaker: "zh_female_xiaohe_uranus_bigtts"
       }
+    }),
+    signal: AbortSignal.timeout(120000)
+  });
+  if (!response.ok) throw new Error(`TTS ${response.status}: ${await response.text()}`);
+
+  // Parse SSE stream to collect audio data
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("TTS stream missing body");
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let audioUri = "";
+  let audioSize = 0;
+  let audioData = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const raw = line.slice(5).trim();
+      if (!raw) continue;
+      try {
+        const event = JSON.parse(raw);
+        const evt = event?.data;
+        // Check for audio URL (if provided)
+        if (evt?.audio?.audio_url) {
+          audioUri = evt.audio.audio_url;
+          audioSize = evt.audio.audio_size || 0;
+        }
+        // Check for base64 audio data
+        if (typeof evt === "string" && evt.length > 100) {
+          audioData += evt;
+        }
+      } catch { /* ignore partial JSON */ }
     }
+    if (audioUri) break;
   }
-  
-  throw new Error("TTS response did not contain audio URL");
+
+  // If we have base64 audio data but no URL, create data URI
+  if (audioData && !audioUri) {
+    audioUri = `data:audio/mp3;base64,${audioData}`;
+    audioSize = Math.ceil((audioData.length * 3) / 4);
+  }
+
+  if (!audioUri) throw new Error("TTS stream missing audio data");
+  return { audioUri, audioSize };
 }

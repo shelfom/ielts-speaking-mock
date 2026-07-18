@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
-"""Verify the 128 mock tests are source-only and internally consistent."""
 import json
 from pathlib import Path
 
 
 def main():
     root = Path(__file__).resolve().parents[1]
+    bank = json.loads((root / "data/topic-bank.json").read_text(encoding="utf-8"))
     sets = json.loads((root / "public/data/mock-tests.json").read_text(encoding="utf-8"))
-
-    assert sets["testCount"] == 128, f"Expected 128 tests, got {sets['testCount']}"
-    ids = [item["id"] for item in sets["tests"]]
-    assert ids == [f"TEST-{i:03d}" for i in range(1, 129)], "Test IDs must be TEST-001 through TEST-128"
-
-    # Verify each test has the required structure
+    # Verify counts match the topic bank structure
+    assert bank["counts"]["part1"] == len(bank["part1"])
+    assert bank["counts"]["part2"] == len(bank["part2"])
+    assert bank["counts"]["part3"] == len(bank["part3"])
+    assert bank["counts"]["part1Prompts"] == sum(len(g["prompts"]) for g in bank["part1"])
+    assert bank["counts"]["part2Prompts"] == sum(len(g["prompts"]) for g in bank["part2"])
+    assert bank["counts"]["part3Prompts"] == sum(len(g["prompts"]) for g in bank["part3"])
+    assert sets["testCount"] == 128
+    assert [item["id"] for item in sets["tests"]] == [f"TEST-{i:03d}" for i in range(1, 129)]
+    source_p1 = {prompt for group in bank["part1"] for prompt in group["prompts"]}
+    source_p2 = {prompt for group in bank["part2"] for prompt in group["prompts"]}
+    source_p3 = {prompt for group in bank["part3"] for prompt in group["prompts"]}
     for test in sets["tests"]:
-        assert len(test["part1"]) >= 1, f"{test['id']} must have at least one Part 1 group"
-        for group in test["part1"]:
-            assert len(group["questions"]) >= 1, f"{test['id']} Part 1 group must have questions"
-        assert test["part2"]["preparationSeconds"] == 60
-        assert test["part2"]["speakingSeconds"] == 120
-        assert len(test["part2"]["cueCard"]) >= 4
-        assert len(test["part3"]["questions"]) >= 1
-
+        assert all(question in source_p1 for group in test["part1"] for question in group["questions"])
+        assert all(line in source_p2 for line in test["part2"]["cueCard"])
+        assert test["part2"]["closingQuestion"] in source_p3
+        assert all(question in source_p3 for question in test["part3"]["questions"])
     print("dataset verified: 128 source-only mock tests")
 
 
