@@ -64,4 +64,6 @@ test("OpenRouter uses model fallbacks, strict schemas, response healing, and bou
   assert.match(openrouter, /response-healing/);
   assert.match(openrouter, /maxAttempts/);
   assert.match(openrouter, /TRANSIENT_STATUSES/);
+  assert.match(openrouter, /new AbortController\(\)/);
+  assert.match(openrouter, /controller\.abort\(\)/);
 });

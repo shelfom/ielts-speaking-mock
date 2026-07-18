@@ -17,6 +17,7 @@ type ChatJsonOptions<T> = {
   maxTokens?: number;
   requireParameters?: boolean;
   reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high";
+  signal?: AbortSignal;
 };
 
 export class OpenRouterRequestError extends Error {
@@ -109,6 +110,10 @@ export async function chatJson<T>(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const startedAt = Date.now();
+    const controller = new AbortController();
+    const forwardAbort = () => controller.abort();
+    options.signal?.addEventListener("abort", forwardAbort, { once: true });
+    const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const body = {
         models: options.models,
@@ -147,7 +152,7 @@ export async function chatJson<T>(
           "X-Title": "TB IELTS Speaking Mock Examiner"
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs)
+        signal: controller.signal
       });
 
       const requestId =
@@ -220,6 +225,9 @@ export async function chatJson<T>(
         ? normalized.retryAfterSeconds * 1000
         : 700 * (2 ** (attempt - 1));
       await delay(backoff);
+    } finally {
+      clearTimeout(timeoutHandle);
+      options.signal?.removeEventListener("abort", forwardAbort);
     }
   }
 

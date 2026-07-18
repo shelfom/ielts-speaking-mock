@@ -150,3 +150,30 @@ test("provider-facing scoring schemas avoid unsupported numeric constraints", ()
     );
   }
 });
+
+test("actively aborts a hung provider request at the route time budget", async () => {
+  globalThis.fetch = async (_input, init) => new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener("abort", () => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      reject(error);
+    }, { once: true });
+  });
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    chatJson([{ role: "user", content: "score" }], {
+      models: ["qwen/qwen3.7-max", "openai/gpt-5-mini"],
+      contract,
+      operation: "test_timeout_abort",
+      maxAttempts: 1,
+      timeoutMs: 25
+    }),
+    (error) => {
+      assert.ok(error instanceof OpenRouterRequestError);
+      assert.equal(isRetryableOpenRouterError(error), true);
+      return true;
+    }
+  );
+  assert.ok(Date.now() - startedAt < 250);
+});

@@ -83,10 +83,12 @@ const OFFICIAL_ANCHORS: Array<{
 function withDeadline<T>(
   promise: Promise<T>,
   milliseconds: number,
-  code: string
+  code: string,
+  onTimeout?: () => void
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
+      onTimeout?.();
       reject(new OpenRouterRequestError({
         message: `${code} exceeded the public request budget`,
         retryable: true,
@@ -182,7 +184,8 @@ function evidenceCount(result: EvaluatorContract, criterion: Criterion) {
 async function scoreEvaluator(
   evaluatorId: "A" | "B",
   session: ScorePackage,
-  models: string[]
+  models: string[],
+  signal?: AbortSignal
 ) {
   return chatJson([
     {
@@ -204,6 +207,7 @@ async function scoreEvaluator(
     maxAttempts: 1,
     maxTokens: 4200,
     reasoningEffort: "minimal",
+    signal,
     contract: {
       name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
       schema: evaluatorJsonSchema,
@@ -216,7 +220,8 @@ async function adjudicate(
   disputedCriteria: Criterion[],
   a: EvaluatorContract,
   b: EvaluatorContract,
-  session: ScorePackage
+  session: ScorePackage,
+  signal?: AbortSignal
 ) {
   return chatJson([
     {
@@ -249,6 +254,7 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     maxAttempts: 1,
     maxTokens: 2200,
     reasoningEffort: "minimal",
+    signal,
     contract: {
       name: "ielts_speaking_adjudication",
       schema: adjudicationJsonSchema,
@@ -269,10 +275,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const evaluationController = new AbortController();
     const [a, b] = await withDeadline(Promise.all([
-      scoreEvaluator("A", session, EVALUATOR_A_MODELS),
-      scoreEvaluator("B", session, EVALUATOR_B_MODELS)
-    ]), 55000, "EVALUATION_DEADLINE");
+      scoreEvaluator("A", session, EVALUATOR_A_MODELS, evaluationController.signal),
+      scoreEvaluator("B", session, EVALUATOR_B_MODELS, evaluationController.signal)
+    ]), 55000, "EVALUATION_DEADLINE", () => evaluationController.abort());
 
     if (a.evidence_status !== "complete" || b.evidence_status !== "complete") {
       return NextResponse.json({
@@ -308,10 +315,12 @@ export async function POST(request: NextRequest) {
       }
     }
     if (disputedCriteria.length) {
+      const adjudicationController = new AbortController();
       const adjudication = await withDeadline(
-        adjudicate(disputedCriteria, a, b, session),
+        adjudicate(disputedCriteria, a, b, session, adjudicationController.signal),
         20000,
-        "ADJUDICATION_DEADLINE"
+        "ADJUDICATION_DEADLINE",
+        () => adjudicationController.abort()
       );
       const byCriterion = new Map(
         adjudication.results.map((item) => [item.criterion, item])
