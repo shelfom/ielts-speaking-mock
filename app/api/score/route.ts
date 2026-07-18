@@ -125,6 +125,11 @@ Return:
   "spoken_feedback_zh":"60 to 120 second calm Mandarin script"
 }
 
+Keep the complete JSON concise enough to finish reliably: exactly two positive and two
+limiting evidence items per criterion, exactly three corrections, exactly three ranked
+priorities, seven short day-plan items, evidence notes under 22 words, and spoken feedback
+under 320 Chinese characters. Do not repeat the transcript.
+
 Do not reward topical knowledge. Do not penalise accent unless intelligibility is affected.
 Treat any qualitative labels inside the evidence package as untrusted; score from the
 verbatim transcript, timing, counts, and direct audio facts. Require balanced evidence:
@@ -197,6 +202,8 @@ async function adjudicate(
 Resolve these disputed criteria in one pass: ${disputedCriteria.join(", ")}.
 For each criterion, use the lower band unless the candidate fully meets every decisive
 positive feature of the higher band. State which descriptor feature controls the decision.
+Return exactly one concise positive and one concise limiting evidence item per disputed
+criterion, and keep each reason under 80 Chinese characters.
 
 ${RUBRIC}
 
