@@ -31,75 +31,21 @@ export async function chatJson(messages: unknown[], model = process.env.OPENROUT
 }
 
 export async function createSpeech(text: string): Promise<ArrayBuffer> {
-  const baseUrl = process.env.COZE_INTEGRATION_BASE_URL;
-  const apiKeyVal = process.env.COZE_WORKLOAD_IDENTITY_API_KEY;
-  if (!baseUrl || !apiKeyVal) throw new Error("Coze TTS environment not configured");
-
-  const response = await fetch(`${baseUrl}/api/v3/tts/unidirectional`, {
+  const response = await fetch(`${ENDPOINT}/audio/speech`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKeyVal}`,
+      Authorization: `Bearer ${apiKey()}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      req_params: {
-        audio_params: {
-          format: "mp3",
-          sample_rate: 24000,
-          speech_rate: 0,
-          loudness_rate: 0
-        },
-        text: text,
-        speaker: "zh_female_xiaohe_uranus_bigtts"
-      }
+      model: "minimax/speech-2.8-hd",
+      input: text,
+      voice: "Wise_Woman",
+      response_format: "mp3",
+      speed: 1
     }),
     signal: AbortSignal.timeout(120000)
   });
-  if (!response.ok) throw new Error(`Coze TTS ${response.status}: ${await response.text()}`);
-
-  const contentType = response.headers.get("content-type") || "";
-  const fullText = await response.text();
-
-  let audioData = "";
-
-  // Handle SSE format: multiple "data: {...}" lines
-  if (contentType.includes("text/event-stream") || fullText.includes("\ndata: ") || fullText.startsWith("data: ")) {
-    const lines = fullText.split("\n");
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const payload = trimmed.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const evt = JSON.parse(payload);
-        if (evt?.code !== undefined && evt.code !== 0) {
-          throw new Error(`Coze TTS error code ${evt.code}: ${evt.msg || "unknown"}`);
-        }
-        if (typeof evt?.data === "string" && evt.data.length > 0) {
-          audioData += evt.data;
-        }
-      } catch (parseErr) {
-        if (parseErr instanceof Error && parseErr.message.startsWith("Coze TTS error")) throw parseErr;
-        // skip malformed JSON lines
-      }
-    }
-  } else {
-    // Handle single JSON response
-    try {
-      const evt = JSON.parse(fullText);
-      if (evt?.code !== undefined && evt.code !== 0) {
-        throw new Error(`Coze TTS error code ${evt.code}: ${evt.msg || "unknown"}`);
-      }
-      if (typeof evt?.data === "string") {
-        audioData = evt.data;
-      }
-    } catch (parseErr) {
-      if (parseErr instanceof Error && parseErr.message.startsWith("Coze TTS error")) throw parseErr;
-      throw new Error(`Failed to parse Coze TTS response: ${fullText.slice(0, 200)}`);
-    }
-  }
-
-  if (!audioData) throw new Error("No audio data received from Coze TTS");
-  const binary = Uint8Array.from(atob(audioData), (c) => c.charCodeAt(0));
-  return binary.buffer;
+  if (!response.ok) throw new Error(`Speech ${response.status}: ${await response.text()}`);
+  return response.arrayBuffer();
 }
