@@ -126,7 +126,8 @@ export async function chatJson<T>(
     const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const body = {
-        models: options.models,
+        // OpenRouter accepts at most three entries in a model-fallback list.
+        models: options.models.slice(0, 3),
         messages,
         temperature: 0,
         max_tokens: options.maxTokens ?? 12000,

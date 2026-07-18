@@ -112,6 +112,24 @@ test("retries malformed model JSON and validates the recovered response", async 
   assert.equal(call, 2);
 });
 
+test("caps model fallback lists at the OpenRouter limit of three", async () => {
+  let requestBody: Record<string, unknown> | undefined;
+  globalThis.fetch = async (_input, init) => {
+    requestBody = JSON.parse(String(init?.body));
+    return success();
+  };
+
+  await chatJson([{ role: "user", content: "score" }], {
+    models: ["a/model", "b/model", "c/model", "d/model"],
+    contract,
+    operation: "test_model_cap",
+    maxAttempts: 1,
+    timeoutMs: 1000
+  });
+
+  assert.deepEqual(requestBody?.models, ["a/model", "b/model", "c/model"]);
+});
+
 test("does not retry permanent authentication or credit failures", async () => {
   let call = 0;
   globalThis.fetch = async () => {

@@ -31,8 +31,7 @@ const EVALUATOR_A_MODELS = Array.from(new Set([
 const EVALUATOR_B_MODELS = Array.from(new Set([
   process.env.OPENROUTER_SCORING_MODEL_B || "google/gemini-3-flash-preview",
   "openai/gpt-5-mini",
-  "anthropic/claude-sonnet-4.5",
-  "qwen/qwen3.7-max"
+  "anthropic/claude-sonnet-4.5"
 ]));
 const ADJUDICATOR_MODELS = Array.from(new Set([
   process.env.OPENROUTER_ADJUDICATION_MODEL || "anthropic/claude-sonnet-4.5",
