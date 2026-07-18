@@ -1,22 +1,22 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'TB IELTS Speaking Mock Examiner',
-  description:
-    'Anonymous IELTS-style Part 1/2/3 speaking mock test with AI scoring. Record audio, get band scores for FC/LR/GRA/P with Chinese written and spoken feedback.',
+  title: "IELTS Speaking Mock Test | 海归湾",
+  description: "A realistic three-part IELTS-style speaking practice test with evidence-backed feedback."
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#16102b"
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-dvh bg-[var(--bg-surround)] text-[var(--text-primary)]">
-        {children}
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }

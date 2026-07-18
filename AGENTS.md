@@ -2,7 +2,7 @@
 
 ## 项目概览
 
-匿名 IELTS 口语模拟考试应用。支持 Part 1/2/3 完整流程，逐轮录音、服务端 AI 评分（FC/LR/GRA/P 四项 + 总分），返回中文书面反馈和可播放的语音反馈。
+匿名 IELTS 口语模拟考试应用。支持 Part 1/2/3 完整流程，逐轮录音、服务端 OpenRouter 音频分析 + 双评估器评分 + 仲裁，返回中文书面反馈和可播放的 Mandarin 语音反馈。
 
 ## 核心目录
 
@@ -10,47 +10,62 @@
 src/
 ├── app/
 │   ├── api/
-│   │   ├── asr/route.ts        # 语音识别 (ASR) - coze-coding-dev-sdk ASRClient
-│   │   ├── score/route.ts      # AI 评分 - coze-coding-dev-sdk LLMClient (doubao-seed-2-0-pro)
-│   │   └── tts/route.ts        # 语音合成 (TTS) - coze-coding-dev-sdk TTSClient
-│   ├── page.tsx                 # 主考试页面 (client component)
-│   ├── layout.tsx               # 根布局
-│   └── globals.css              # 全局样式 + 设计 tokens
-├── components/exam/
-│   ├── audio-orb.tsx            # 中央音频光球组件
-│   ├── cue-card.tsx             # Part 2 橙色提示卡
-│   └── results-panel.tsx        # 成绩反馈面板
-├── hooks/
-│   └── use-audio-recorder.ts    # 浏览器录音 hook
-└── lib/
-    ├── types.ts                 # 核心类型定义
-    ├── question-bank.ts         # 题库 (placeholder, 待替换 128 套)
-    └── utils.ts                 # cn() 工具
+│   │   ├── analyse-turn/route.ts  # 单轮音频分析 (OpenRouter audio model)
+│   │   ├── score/route.ts         # 双评估器评分 + 仲裁 (OpenRouter scoring model)
+│   │   └── feedback-audio/route.ts # Mandarin TTS 语音反馈 (minimax/speech-2.8-hd)
+│   ├── page.tsx                    # 主考试页面 (client component)
+│   ├── layout.tsx                  # 根布局
+│   └── globals.css                 # 全局样式 + 设计 tokens
+├── lib/
+│   ├── audio.ts                    # blobToMonoWav + preferredMimeType
+│   ├── openrouter.ts               # OpenRouter API 封装 (chatJson + createSpeech)
+│   ├── rubric.ts                   # IELTS 评分标准 + OUTPUT_CONTRACT + roundHalf
+│   └── types.ts                    # 核心类型定义
+public/
+├── data/
+│   ├── mock-tests.json             # 128 套完整测试题
+│   └── examiner-audio.json         # 691 条 en-GB-SoniaNeural 考官音频映射
+└── audio/examiner/                 # 691 个预生成 MP3 文件
+scripts/
+├── assemble_tests.py               # 题库组装
+├── build_topic_bank.py             # 主题库构建
+├── generate_examiner_audio.py      # 考官音频生成
+├── map_topics.py                   # 主题映射
+├── verify_dataset.py               # 数据集验证
+└── verify_examiner_audio.py        # 音频验证
+tests/
+└── contracts.test.mjs              # 契约测试 (128 tests, 691 audio)
 ```
 
 ## 考试流程
 
-1. **Idle** → 点击 Start Mock Test
-2. **Part 1** → 3 个短问题，每个录音 → ASR 转写
-3. **Part 2** → 1 分钟准备 + 1-2 分钟录音 → ASR 转写
-4. **Part 3** → 3 个讨论问题，每个录音 → ASR 转写
-5. **Scoring** → 所有转写文本发送到 LLM 评分
-6. **Results** → 显示分数 + 中文书面反馈 + TTS 语音反馈
+1. **Home** → 选择测试集 + 麦克风检查
+2. **Live** → Part 1 (3组问题) → Part 2 (1分钟准备+2分钟录音+结束问题) → Part 3 (3个讨论问题)
+3. **Analysing** → 每轮音频并行上传 analyse-turn → 全部完成后 score 双评估
+4. **Result** → 显示总分 + 四项分数 + 中文诊断 + 证据修正 + 优先方案 + 七天计划 + TTS 语音反馈
 
 ## API 接口
 
 | 路径 | 方法 | 说明 |
 |------|------|------|
-| `/api/asr` | POST (FormData) | 上传音频文件，返回转写文本 |
-| `/api/score` | POST (JSON) | 传入转写文本数组，返回 IELTS 评分 |
-| `/api/tts` | POST (JSON) | 传入中文文本，返回 TTS 音频 URI |
+| `/api/analyse-turn` | POST (FormData) | 上传 WAV 音频，OpenRouter audio model 返回转写+音频证据 |
+| `/api/score` | POST (JSON) | 传入 analyses 数组，双评估器独立评分，>0.5 分差触发仲裁 |
+| `/api/feedback-audio` | POST (JSON) | 传入中文文本，minimax TTS 返回 MP3 音频 |
+
+## 环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `OPENROUTER_API_KEY` | OpenRouter API 密钥 |
+| `OPENROUTER_AUDIO_MODEL` | 音频分析模型 (默认: mistralai/voxtral-small-24b-2507) |
+| `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: deepseek/deepseek-v4-flash) |
 
 ## 设计系统
 
-- 深色音频优先 UI：深青黑背景 + 茄子皮面板
-- 中央音频光球：luminous cyan 呼吸/录音动画
-- Part 2 提示卡：橙色霓虹风格
-- 分数颜色：>=7 翠绿，>=5.5 琥珀，<5.5 珊瑚红
+- 首页：明亮白底 + 紫蓝渐变品牌卡片 + 衬线体大标题
+- 考试面板：深茄子皮渐变 + 中央音频光球 + 青色脉冲波纹
+- Part 2 提示卡：橙色渐变 + inset 高光
+- 结果页：深色 hero + 浅色报告卡片
 - 详见 `DESIGN.md`
 
 ---
@@ -59,64 +74,39 @@ src/
 
 ### 版本技术栈
 
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Core**: React 19
 - **Language**: TypeScript 5
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **Styling**: Tailwind CSS 4
+- **Styling**: 纯 CSS (globals.css)
+- **Icons**: lucide-react
 
 ## 目录结构
 
 ```
-├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
+├── public/                 # 静态资源 (128 tests + 691 MP3)
+├── scripts/                # 数据构建与验证脚本
 ├── src/
-│   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
-│   └── server.ts           # 自定义服务端入口
+│   ├── app/                # 页面路由与 API
+│   └── lib/                # 工具库
+├── tests/                  # 契约测试
 ├── next.config.ts          # Next.js 配置
 ├── package.json            # 项目依赖管理
 └── tsconfig.json           # TypeScript 配置
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
-
 ## 包管理规范
 
-**仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
+**仅允许使用 pnpm** 作为包管理器。
 
 ## 开发规范
 
 ### 编码规范
 
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
-
-### next.config 配置规范
-
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
+- TypeScript strict 模式
+- 禁止隐式 any
+- 所有函数参数必须有类型标注
 
 ### Hydration 问题防范
 
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
-
-## UI 设计与组件规范 (UI & Styling Standards)
-
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+- 使用 'use client' 配合 useEffect + useState 处理客户端动态内容
+- 禁止使用 head 标签，使用 metadata API

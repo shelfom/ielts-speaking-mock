@@ -1,148 +1,154 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
-import type { ScoringResult, BandScore, CriterionScore } from '@/lib/types';
+import { NextRequest, NextResponse } from "next/server";
+import { chatJson } from "@/lib/openrouter";
+import { OUTPUT_CONTRACT, RUBRIC, roundHalf } from "@/lib/rubric";
 
-interface ScoringRequest {
-  transcripts: {
-    part: number;
-    question: string;
-    answer: string;
-  }[];
-}
+export const runtime = "nodejs";
+export const maxDuration = 240;
 
-const SCORING_SYSTEM_PROMPT = `You are an expert IELTS Speaking examiner with 20+ years of experience. You must score the candidate's spoken English according to the official IELTS Speaking Band Descriptors.
+type Criterion = "FC" | "LR" | "GRA" | "P";
+const CRITERIA: Criterion[] = ["FC", "LR", "GRA", "P"];
 
-You will receive transcripts of the candidate's answers across Part 1, Part 2, and Part 3 of the IELTS Speaking test. Based on these transcripts, you must provide detailed scoring.
+function evaluatorPrompt(evaluatorId: string, session: unknown) {
+  return `
+You are independent IELTS-style Speaking evaluator ${evaluatorId}. Use only the evidence
+package below and the current public IELTS Speaking descriptors summarised here.
 
-## Scoring Criteria (each scored 0-9 in 0.5 increments):
-1. **Fluency and Coherence (FC)**: Flow of speech, coherence, connectives, hesitation
-2. **Lexical Resource (LR)**: Vocabulary range, precision, collocation, paraphrasing
-3. **Grammatical Range and Accuracy (GRA)**: Sentence structures, error frequency, complexity
-4. **Pronunciation (P)**: Since you only have transcripts, assess pronunciation indicators through word choices, natural phrasing, and note that this score should be estimated based on the overall quality of language use. If the transcript shows natural spoken patterns, rate slightly higher; if it shows very written/formal patterns, rate slightly lower.
+${RUBRIC}
 
-## Overall Band:
-Average of the 4 criteria, rounded to the nearest 0.5.
+${OUTPUT_CONTRACT}
 
-## Output Format:
-You MUST respond with valid JSON only, no markdown, no code blocks. The JSON structure must be:
+Return:
 {
-  "fc": {
-    "band": <number>,
-    "explanation": "<Chinese explanation of why this band>",
-    "examples": ["<specific example from transcript>", ...],
-    "suggestions": ["<Chinese improvement suggestion>", ...]
+  "evaluator_id":"${evaluatorId}",
+  "evidence_status":"complete|partial|insufficient",
+  "criteria":{
+    "FC":{"band":6.5,"why":"Chinese","why_not_higher":"Chinese","positive_evidence":[],"limiting_evidence":[]},
+    "LR":{"band":6.0,"why":"Chinese","why_not_higher":"Chinese","positive_evidence":[],"limiting_evidence":[]},
+    "GRA":{"band":6.0,"why":"Chinese","why_not_higher":"Chinese","positive_evidence":[],"limiting_evidence":[]},
+    "P":{"band":6.5,"why":"Chinese","why_not_higher":"Chinese","positive_evidence":[],"limiting_evidence":[]}
   },
-  "lr": {
-    "band": <number>,
-    "explanation": "<Chinese>",
-    "examples": ["<example>", ...],
-    "suggestions": ["<Chinese suggestion>", ...]
-  },
-  "gra": {
-    "band": <number>,
-    "explanation": "<Chinese>",
-    "examples": ["<example>", ...],
-    "suggestions": ["<Chinese suggestion>", ...]
-  },
-  "p": {
-    "band": <number>,
-    "explanation": "<Chinese>",
-    "examples": ["<example>", ...],
-    "suggestions": ["<Chinese suggestion>", ...]
-  },
-  "overall": <number>,
-  "writtenFeedback": "<Full Chinese written feedback, 200-400 characters, covering strengths, weaknesses, and study advice>",
-  "spokenFeedback": "<Chinese spoken feedback script for TTS, 100-200 characters, natural spoken style summarizing the key points>"
+  "diagnosis_zh":"one concise Chinese sentence",
+  "evidence_corrections":[
+    {"turn_id":"p3-q2","start":0.0,"end":4.0,"original":"...","improved":"...","reason_zh":"..."}
+  ],
+  "part_diagnostics":{"part1":"Chinese","part2":"Chinese","part3":"Chinese"},
+  "priorities":[
+    {"rank":1,"diagnosis_zh":"...","drill_zh":"...","schedule_zh":"...","success_measure_zh":"..."}
+  ],
+  "seven_day_plan":["Day 1 Chinese task","..."],
+  "spoken_feedback_zh":"60 to 120 second calm Mandarin script"
 }
 
-All explanations, suggestions, writtenFeedback, and spokenFeedback MUST be in Chinese (Simplified).
-Band scores must be valid IELTS bands: 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, or 9.
-Be strict and realistic in scoring. Do not inflate scores.`;
+Do not reward topical knowledge. Do not penalise accent unless intelligibility is affected.
+If the session lacks all three parts, a meaningful Part 2 long turn, or rateable audio
+evidence, return insufficient rather than fabricated precision.
 
-function validateBandScore(band: number): BandScore {
-  const validBands: BandScore[] = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
-  if (validBands.includes(band as BandScore)) {
-    return band as BandScore;
-  }
-  // Round to nearest 0.5
-  const rounded = Math.round(band * 2) / 2;
-  return Math.max(0, Math.min(9, rounded)) as BandScore;
+EVIDENCE PACKAGE:
+${JSON.stringify(session)}
+`.trim();
+}
+
+function evidenceCount(result: any, criterion: Criterion) {
+  const item = result?.criteria?.[criterion];
+  return (item?.positive_evidence?.length || 0) >= 2 && (item?.limiting_evidence?.length || 0) >= 2;
+}
+
+async function adjudicate(criterion: Criterion, a: any, b: any, session: unknown) {
+  return chatJson([
+    {
+      role: "system",
+      content: "You are the final IELTS-style speaking score adjudicator. Return JSON only."
+    },
+    {
+      role: "user",
+      content: `
+Resolve only ${criterion}. The independent bands differ by more than 0.5.
+Use the lower band unless the candidate fully meets every decisive positive feature of
+the higher band. State which descriptor feature controls the decision.
+
+${RUBRIC}
+
+Evaluator A: ${JSON.stringify(a.criteria[criterion])}
+Evaluator B: ${JSON.stringify(b.criteria[criterion])}
+Session: ${JSON.stringify(session)}
+
+Return {"criterion":"${criterion}","band":6.5,"reason_zh":"...","positive_evidence":[],"limiting_evidence":[]}
+`.trim()
+    }
+  ]);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as ScoringRequest;
-    const { transcripts } = body;
-
-    if (!transcripts || !Array.isArray(transcripts) || transcripts.length === 0) {
-      return NextResponse.json(
-        { error: 'No transcripts provided for scoring' },
-        { status: 400 }
-      );
+    const session = await request.json();
+    if (!Array.isArray(session?.analyses) || session.analyses.length < 8) {
+      return NextResponse.json({
+        status: "insufficient_evidence",
+        label: "IELTS-style estimate unavailable",
+        explanationZh: "有效录音太少，无法负责任地给出精确分数。请完成三个部分后重试。",
+        missing: ["complete Parts 1, 2 and 3", "a rateable Part 2 long turn"]
+      });
     }
 
-    // Build the user message with all transcripts
-    const transcriptText = transcripts
-      .map((t) => {
-        const partLabel = `Part ${t.part}`;
-        return `【${partLabel}】\nQuestion: ${t.question}\nCandidate Answer: ${t.answer}`;
-      })
-      .join('\n\n---\n\n');
+    const [a, b] = await Promise.all([
+      chatJson([{ role: "system", content: "Score independently. Never infer another evaluator's judgement." }, { role: "user", content: evaluatorPrompt("A", session) }]),
+      chatJson([{ role: "system", content: "Score independently. Never infer another evaluator's judgement." }, { role: "user", content: evaluatorPrompt("B", session) }])
+    ]);
 
-    const userMessage = `Please score the following IELTS Speaking test transcripts:\n\n${transcriptText}`;
-
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const config = new Config();
-    const client = new LLMClient(config, customHeaders);
-
-    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: SCORING_SYSTEM_PROMPT },
-      { role: 'user', content: userMessage },
-    ];
-
-    const response = await client.invoke(messages, {
-      model: 'doubao-seed-2-0-pro-260215',
-      temperature: 0.3,
-    });
-
-    // Parse the JSON response
-    let rawContent = response.content.trim();
-    // Remove potential markdown code blocks
-    if (rawContent.startsWith('```')) {
-      rawContent = rawContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    if (a.evidence_status !== "complete" || b.evidence_status !== "complete") {
+      return NextResponse.json({
+        status: "insufficient_evidence",
+        label: "IELTS-style estimate unavailable",
+        explanationZh: "录音质量或测试完整度不足，系统不会用假精确的分数误导你。",
+        missing: ["clearer audio or a complete three-part performance"]
+      });
     }
 
-    const parsed = JSON.parse(rawContent) as ScoringResult;
-
-    // Validate and normalize band scores
-    const result: ScoringResult = {
-      fc: {
-        ...parsed.fc,
-        band: validateBandScore(parsed.fc.band),
-      } as CriterionScore,
-      lr: {
-        ...parsed.lr,
-        band: validateBandScore(parsed.lr.band),
-      } as CriterionScore,
-      gra: {
-        ...parsed.gra,
-        band: validateBandScore(parsed.gra.band),
-      } as CriterionScore,
-      p: {
-        ...parsed.p,
-        band: validateBandScore(parsed.p.band),
-      } as CriterionScore,
-      overall: validateBandScore(parsed.overall),
-      writtenFeedback: parsed.writtenFeedback,
-      spokenFeedback: parsed.spokenFeedback,
-    };
-
-    return NextResponse.json({ result });
+    const subBands: Record<Criterion, number> = { FC: 0, LR: 0, GRA: 0, P: 0 };
+    const criteria: Record<string, any> = {};
+    for (const criterion of CRITERIA) {
+      if (!evidenceCount(a, criterion) || !evidenceCount(b, criterion)) {
+        throw new Error(`${criterion} lacks auditable evidence`);
+      }
+      const bandA = Number(a.criteria[criterion].band);
+      const bandB = Number(b.criteria[criterion].band);
+      if (Math.abs(bandA - bandB) > 0.5) {
+        const final = await adjudicate(criterion, a, b, session);
+        subBands[criterion] = Number(final.band);
+        criteria[criterion] = {
+          ...a.criteria[criterion],
+          band: Number(final.band),
+          why: final.reason_zh,
+          positive_evidence: final.positive_evidence,
+          limiting_evidence: final.limiting_evidence
+        };
+      } else {
+        subBands[criterion] = roundHalf((bandA + bandB) / 2);
+        criteria[criterion] = {
+          ...a.criteria[criterion],
+          band: subBands[criterion]
+        };
+      }
+    }
+    const overall = roundHalf(CRITERIA.reduce((sum, key) => sum + subBands[key], 0) / 4);
+    return NextResponse.json({
+      status: "scored",
+      label: "IELTS-style estimated band — practice feedback, not an official IELTS score",
+      overall,
+      subBands,
+      diagnosisZh: a.diagnosis_zh,
+      criteria,
+      evidenceCorrections: a.evidence_corrections?.slice(0, 8) || [],
+      priorities: a.priorities?.slice(0, 3) || [],
+      partDiagnostics: a.part_diagnostics,
+      sevenDayPlan: a.seven_day_plan?.slice(0, 7) || [],
+      spokenFeedbackZh: a.spoken_feedback_zh
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error('Scoring error:', error);
+    console.error("score", error);
     return NextResponse.json(
-      { error: 'AI scoring failed. Please try again.' },
-      { status: 500 }
+      { error: "Scoring could not be completed. Your recording has not been retained." },
+      { status: 502 }
     );
   }
 }

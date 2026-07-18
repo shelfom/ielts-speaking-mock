@@ -1,543 +1,600 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { ExamPhase, TestSet, TurnRecord, ScoringResult } from '@/lib/types';
-import { getRandomTestSet } from '@/lib/question-bank';
-import { useAudioRecorder } from '@/hooks/use-audio-recorder';
-import { AudioOrb } from '@/components/exam/audio-orb';
-import { CueCard } from '@/components/exam/cue-card';
-import { ResultsPanel } from '@/components/exam/results-panel';
+import {
+  ArrowLeft,
+  Check,
+  Download,
+  Headphones,
+  Mic,
+  Mic2,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+  Square,
+  Volume2
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { blobToMonoWav, preferredMimeType } from "@/lib/audio";
+import type { ExamStep, MockTest, TurnAnalysis } from "@/lib/types";
 
-export default function ExamPage() {
-  const [phase, setPhase] = useState<ExamPhase>('idle');
-  const [testSet, setTestSet] = useState<TestSet | null>(null);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [turns, setTurns] = useState<TurnRecord[]>([]);
-  const [scoringResult, setScoringResult] = useState<ScoringResult | null>(null);
-  const [spokenAudioUri, setSpokenAudioUri] = useState<string | null>(null);
-  const [prepTime, setPrepTime] = useState(60);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
+type Screen = "home" | "live" | "analysing" | "result";
+type Status = "idle" | "examiner" | "prep" | "candidate" | "uploading";
+type AudioManifest = { items: Record<string, string> };
 
-  const {
-    isRecording,
-    recordingDuration,
-    startRecording,
-    stopRecording,
-    cancelRecording,
-  } = useAudioRecorder();
+const SAY = {
+  welcome: "Good morning. My name is Emma. This is an independent IELTS-style speaking practice test.",
+  part1: "We will begin with Part 1. I will ask you some questions about yourself and familiar topics.",
+  part2: "Thank you. Now we will move on to Part 2.",
+  prep: "You have one minute to prepare. You may make notes if you wish.",
+  speak: "Your preparation time is over. Please begin speaking now.",
+  stop: "Thank you. You have spoken for two minutes.",
+  part3: "We will now move on to Part 3. I will ask you some more general questions related to the topic.",
+  end: "Thank you. That is the end of the speaking test."
+};
 
+function buildSteps(test: MockTest): ExamStep[] {
+  const p1Questions = test.part1.flatMap((group) => group.questions);
+  return [
+    { id: "welcome", part: 1, prompt: SAY.welcome, kind: "intro", record: false },
+    { id: "part1-intro", part: 1, prompt: SAY.part1, kind: "intro", record: false },
+    ...p1Questions.map((prompt, index) => ({
+      id: `p1-q${index + 1}`,
+      part: 1 as const,
+      prompt,
+      kind: "question" as const,
+      record: true,
+      maxSeconds: 45
+    })),
+    { id: "part2-intro", part: 2, prompt: SAY.part2, kind: "intro", record: false },
+    { id: "part2-prep", part: 2, prompt: SAY.prep, kind: "prep", record: false },
+    { id: "part2-long", part: 2, prompt: SAY.speak, kind: "long-turn", record: true, maxSeconds: 120 },
+    { id: "part2-close", part: 2, prompt: test.part2.closingQuestion, kind: "closing", record: true, maxSeconds: 35 },
+    { id: "part3-intro", part: 3, prompt: SAY.part3, kind: "intro", record: false },
+    ...test.part3.questions.map((prompt, index) => ({
+      id: `p3-q${index + 1}`,
+      part: 3 as const,
+      prompt,
+      kind: "question" as const,
+      record: true,
+      maxSeconds: 60
+    })),
+    { id: "finish", part: 3, prompt: SAY.end, kind: "finish", record: false }
+  ];
+}
+
+function fmt(seconds: number) {
+  const value = Math.max(0, seconds);
+  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+}
+
+export default function Home() {
+  const [screen, setScreen] = useState<Screen>("home");
+  const [tests, setTests] = useState<MockTest[]>([]);
+  const [selectedId, setSelectedId] = useState("TEST-001");
+  const [manifest, setManifest] = useState<AudioManifest | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [status, setStatus] = useState<Status>("idle");
+  const [countdown, setCountdown] = useState(0);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [micLevel, setMicLevel] = useState(0);
+  const [micReady, setMicReady] = useState(false);
+  const [micMessage, setMicMessage] = useState("Run a quick microphone check");
+  const [checkAudioUrl, setCheckAudioUrl] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+  const [feedbackPlaying, setFeedbackPlaying] = useState(false);
+
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordingStartedRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stepRef = useRef(0);
+  const analysesRef = useRef<Promise<TurnAnalysis>[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // ── Start Exam ──
-  const startExam = useCallback(() => {
-    const ts = getRandomTestSet();
-    setTestSet(ts);
-    setCurrentQIndex(0);
-    setTurns([]);
-    setScoringResult(null);
-    setSpokenAudioUri(null);
-    setPhase('part1-intro');
-  }, []);
-
-  // ── Part 1 Flow ──
-  const currentPart1Question =
-    testSet?.part1Questions[currentQIndex] ?? '';
-
-  const startPart1Recording = useCallback(async () => {
-    setPhase('part1-recording');
-    await startRecording();
-  }, [startRecording]);
-
-  const stopPart1Recording = useCallback(async () => {
-    const { blob, url, duration } = await stopRecording();
-    const turn: TurnRecord = {
-      part: 1,
-      questionIndex: currentQIndex,
-      question: currentPart1Question,
-      transcript: '',
-      audioUrl: url,
-      duration,
-    };
-
-    setTurns((prev) => [...prev, turn]);
-    setIsProcessing(true);
-    setStatusMessage('Transcribing your answer...');
-
-    // ASR
-    const transcript = await transcribeAudio(blob);
-    setTurns((prev) =>
-      prev.map((t, i) =>
-        i === prev.length - 1 ? { ...t, transcript } : t
-      )
-    );
-
-    setIsProcessing(false);
-    setStatusMessage('');
-
-    // Move to next Part 1 question or Part 2
-    if (currentQIndex < (testSet?.part1Questions.length ?? 0) - 1) {
-      setCurrentQIndex((prev) => prev + 1);
-      setPhase('part1-question');
-    } else {
-      // Move to Part 2 prep
-      setPrepTime(60);
-      setPhase('part2-prep');
-      startPrepTimer();
-    }
-  }, [stopRecording, currentQIndex, currentPart1Question, testSet]);
-
-  // ── Part 2 Prep Timer ──
-  const startPrepTimer = useCallback(() => {
-    setPrepTime(60);
-    prepTimerRef.current = setInterval(() => {
-      setPrepTime((prev) => {
-        if (prev <= 1) {
-          if (prepTimerRef.current) clearInterval(prepTimerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  useEffect(() => {
+    Promise.all([
+      fetch("/data/mock-tests.json").then((response) => response.json()),
+      fetch("/data/examiner-audio.json").then((response) => response.json())
+    ])
+      .then(([testData, audioData]) => {
+        setTests(testData.tests);
+        setManifest(audioData);
+        const saved = localStorage.getItem("tb-speaking-last-test");
+        if (saved && testData.tests.some((item: MockTest) => item.id === saved)) setSelectedId(saved);
+      })
+      .catch(() => setError("The test bank could not be loaded. Please refresh."));
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (prepTimerRef.current) clearInterval(prepTimerRef.current);
-    };
-  }, []);
+    stepRef.current = stepIndex;
+  }, [stepIndex]);
 
-  const startPart2Recording = useCallback(async () => {
-    if (prepTimerRef.current) {
-      clearInterval(prepTimerRef.current);
-      prepTimerRef.current = null;
-    }
-    setPhase('part2-recording');
-    setCurrentQIndex(0);
-    await startRecording();
-  }, [startRecording]);
-
-  const stopPart2Recording = useCallback(async () => {
-    const { blob, url, duration } = await stopRecording();
-    const turn: TurnRecord = {
-      part: 2,
-      questionIndex: 0,
-      question: testSet?.part2.topic ?? '',
-      transcript: '',
-      audioUrl: url,
-      duration,
-    };
-
-    setTurns((prev) => [...prev, turn]);
-    setIsProcessing(true);
-    setStatusMessage('Transcribing your Part 2 response...');
-
-    const transcript = await transcribeAudio(blob);
-    setTurns((prev) =>
-      prev.map((t, i) =>
-        i === prev.length - 1 ? { ...t, transcript } : t
-      )
-    );
-
-    setIsProcessing(false);
-    setStatusMessage('');
-
-    // Move to Part 3
-    setCurrentQIndex(0);
-    setPhase('part3-question');
-  }, [stopRecording, testSet]);
-
-  // ── Part 3 Flow ──
-  const currentPart3Question =
-    testSet?.part3Questions[currentQIndex] ?? '';
-
-  const startPart3Recording = useCallback(async () => {
-    setPhase('part3-recording');
-    await startRecording();
-  }, [startRecording]);
-
-  const stopPart3Recording = useCallback(async () => {
-    const { blob, url, duration } = await stopRecording();
-    const turn: TurnRecord = {
-      part: 3,
-      questionIndex: currentQIndex,
-      question: currentPart3Question,
-      transcript: '',
-      audioUrl: url,
-      duration,
-    };
-
-    setTurns((prev) => [...prev, turn]);
-    setIsProcessing(true);
-    setStatusMessage('Transcribing...');
-
-    const transcript = await transcribeAudio(blob);
-    setTurns((prev) =>
-      prev.map((t, i) =>
-        i === prev.length - 1 ? { ...t, transcript } : t
-      )
-    );
-
-    setIsProcessing(false);
-    setStatusMessage('');
-
-    if (currentQIndex < (testSet?.part3Questions.length ?? 0) - 1) {
-      setCurrentQIndex((prev) => prev + 1);
-      setPhase('part3-question');
-    } else {
-      // All done — start scoring
-      setPhase('scoring');
-    }
-  }, [stopRecording, currentQIndex, currentPart3Question, testSet]);
-
-  // ── Scoring ──
   useEffect(() => {
-    if (phase !== 'scoring') return;
-
-    const doScoring = async () => {
-      setIsProcessing(true);
-      setStatusMessage('AI examiner is evaluating your performance...');
-
-      try {
-        const transcripts = turns.map((t) => ({
-          part: t.part,
-          question: t.question,
-          answer: t.transcript || '[No transcript available]',
-        }));
-
-        const res = await fetch('/api/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcripts }),
-        });
-
-        if (!res.ok) throw new Error('Scoring failed');
-
-        const data = (await res.json()) as { result: ScoringResult };
-        setScoringResult(data.result);
-
-        // Generate TTS for spoken feedback
-        setStatusMessage('Generating spoken feedback...');
-        const ttsRes = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.result.spokenFeedback }),
-        });
-
-        if (ttsRes.ok) {
-          const ttsData = (await ttsRes.json()) as { audioUri: string };
-          setSpokenAudioUri(ttsData.audioUri);
-        }
-
-        setPhase('results');
-      } catch (err) {
-        console.error('Scoring error:', err);
-        setStatusMessage('Scoring failed. Please try again.');
-        setPhase('results');
-      } finally {
-        setIsProcessing(false);
-        setStatusMessage('');
-      }
+    const guard = (event: BeforeUnloadEvent) => {
+      if (screen === "live" || screen === "analysing") event.preventDefault();
     };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [screen]);
 
-    doScoring();
-  }, [phase, turns]);
-
-  // ── Restart ──
-  const restart = useCallback(() => {
-    setPhase('idle');
-    setTestSet(null);
-    setCurrentQIndex(0);
-    setTurns([]);
-    setScoringResult(null);
-    setSpokenAudioUri(null);
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (prepTimerRef.current) clearInterval(prepTimerRef.current);
   }, []);
 
-  // ── Replay spoken feedback ──
-  const replayFeedback = useCallback(() => {
-    if (spokenAudioUri) {
-      if (audioRef.current) {
-        audioRef.current.pause();
+  const selectedTest = useMemo(
+    () => tests.find((item) => item.id === selectedId) || tests[0],
+    [tests, selectedId]
+  );
+  const steps = useMemo(() => (selectedTest ? buildSteps(selectedTest) : []), [selectedTest]);
+  const current = steps[stepIndex];
+
+  const ensureStream = useCallback(async () => {
+    if (streamRef.current?.active) return streamRef.current;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1
       }
-      audioRef.current = new Audio(spokenAudioUri);
-      audioRef.current.play();
-    }
-  }, [spokenAudioUri]);
-
-  // ── Current question text ──
-  const currentQuestion = (() => {
-    if (!testSet) return '';
-    switch (phase) {
-      case 'part1-question':
-      case 'part1-recording':
-        return testSet.part1Questions[currentQIndex] ?? '';
-      case 'part2-recording':
-        return testSet.part2.topic;
-      case 'part3-question':
-      case 'part3-recording':
-        return testSet.part3Questions[currentQIndex] ?? '';
-      default:
-        return '';
-    }
-  })();
-
-  // ── Render ──
-  return (
-    <div className="exam-panel flex flex-col items-center justify-center overflow-y-auto">
-      {/* ── Idle / Welcome ── */}
-      {phase === 'idle' && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-8 px-6 text-center">
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
-              TB IELTS Speaking
-            </h1>
-            <p className="text-lg text-[var(--text-secondary)]">
-              Mock Examiner
-            </p>
-          </div>
-
-          <p className="max-w-md text-sm text-[var(--text-secondary)] leading-relaxed">
-            Take a full anonymous IELTS-style speaking test with Part 1, 2, and
-            3. Your audio will be recorded turn by turn, transcribed, and scored
-            by an AI examiner using official band descriptors for FC, LR, GRA,
-            and Pronunciation.
-          </p>
-
-          <div className="space-y-3 text-xs text-[var(--text-secondary)]">
-            <p>Part 1: 3 short questions (4-5 min)</p>
-            <p>Part 2: 1 cue card topic (3-4 min with 1 min prep)</p>
-            <p>Part 3: 3 discussion questions (4-5 min)</p>
-          </div>
-
-          <button
-            onClick={startExam}
-            className="btn-cyan-glow px-10 py-4 rounded-xl text-base"
-          >
-            Start Mock Test
-          </button>
-
-          <p className="text-xs text-[var(--text-secondary)]/60">
-            Microphone access required. Audio is processed securely on the server.
-          </p>
-        </div>
-      )}
-
-      {/* ── Part 1 Intro ── */}
-      {phase === 'part1-intro' && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={1} />
-          <h2 className="text-xl sm:text-2xl font-semibold">
-            Part 1 — Introduction & Interview
-          </h2>
-          <p className="text-sm text-[var(--text-secondary)] max-w-sm">
-            I will ask you some general questions about familiar topics. Answer
-            each question naturally, as in a real IELTS test.
-          </p>
-          <button
-            onClick={() => setPhase('part1-question')}
-            className="btn-cyan-glow px-8 py-3 rounded-lg text-sm"
-          >
-            Begin Part 1
-          </button>
-        </div>
-      )}
-
-      {/* ── Part 1 Question ── */}
-      {phase === 'part1-question' && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={1} />
-          <p className="text-xs text-[var(--text-secondary)]">
-            Question {currentQIndex + 1} of {testSet?.part1Questions.length}
-          </p>
-          <QuestionDisplay text={currentQuestion} />
-          <button
-            onClick={startPart1Recording}
-            className="btn-cyan-glow px-8 py-3 rounded-lg text-sm"
-          >
-            Start Speaking
-          </button>
-        </div>
-      )}
-
-      {/* ── Part 1 Recording ── */}
-      {phase === 'part1-recording' && (
-        <div className="flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={1} />
-          <QuestionDisplay text={currentQuestion} />
-          <AudioOrb
-            isRecording={isRecording}
-            isIdle={false}
-            onClick={stopPart1Recording}
-            label="Tap to stop recording"
-            duration={recordingDuration}
-          />
-        </div>
-      )}
-
-      {/* ── Part 2 Prep ── */}
-      {phase === 'part2-prep' && testSet && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={2} />
-          <h2 className="text-lg font-semibold">Preparation Time</h2>
-          <p className="font-mono text-4xl text-[var(--cyan-glow)] tabular-nums">
-            {formatTime(prepTime)}
-          </p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-sm">
-            Read the cue card below and prepare your answer. You have 1 minute.
-          </p>
-          <CueCard
-            topic={testSet.part2.topic}
-            bullets={testSet.part2.bullets}
-          />
-          <button
-            onClick={startPart2Recording}
-            className="btn-cyan-glow px-8 py-3 rounded-lg text-sm"
-          >
-            {prepTime > 0 ? 'Start Speaking Now' : 'Begin Part 2'}
-          </button>
-        </div>
-      )}
-
-      {/* ── Part 2 Recording ── */}
-      {phase === 'part2-recording' && testSet && (
-        <div className="flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={2} />
-          <CueCard
-            topic={testSet.part2.topic}
-            bullets={testSet.part2.bullets}
-          />
-          <AudioOrb
-            isRecording={isRecording}
-            isIdle={false}
-            onClick={stopPart2Recording}
-            label="Tap to stop recording"
-            duration={recordingDuration}
-          />
-        </div>
-      )}
-
-      {/* ── Part 3 Question ── */}
-      {phase === 'part3-question' && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={3} />
-          <p className="text-xs text-[var(--text-secondary)]">
-            Question {currentQIndex + 1} of {testSet?.part3Questions.length}
-          </p>
-          <QuestionDisplay text={currentQuestion} />
-          <button
-            onClick={startPart3Recording}
-            className="btn-cyan-glow px-8 py-3 rounded-lg text-sm"
-          >
-            Start Speaking
-          </button>
-        </div>
-      )}
-
-      {/* ── Part 3 Recording ── */}
-      {phase === 'part3-recording' && (
-        <div className="flex flex-col items-center gap-6 px-6 text-center">
-          <PartBadge part={3} />
-          <QuestionDisplay text={currentQuestion} />
-          <AudioOrb
-            isRecording={isRecording}
-            isIdle={false}
-            onClick={stopPart3Recording}
-            label="Tap to stop recording"
-            duration={recordingDuration}
-          />
-        </div>
-      )}
-
-      {/* ── Scoring ── */}
-      {phase === 'scoring' && (
-        <div className="animate-fade-in-up flex flex-col items-center gap-6 px-6 text-center">
-          <AudioOrb isRecording={false} isIdle={true} />
-          <p className="text-lg font-medium text-[var(--text-primary)]">
-            Evaluating your performance...
-          </p>
-          {statusMessage && (
-            <p className="text-sm text-[var(--text-secondary)]">
-              {statusMessage}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ── Results ── */}
-      {phase === 'results' && scoringResult && (
-        <div className="py-8 w-full">
-          <ResultsPanel
-            result={scoringResult}
-            spokenAudioUri={spokenAudioUri}
-            onReplay={replayFeedback}
-            onRestart={restart}
-          />
-        </div>
-      )}
-
-      {/* ── Processing overlay ── */}
-      {isProcessing && phase !== 'scoring' && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-[var(--bg-panel-elevated)] border border-[var(--cyan-glow-dim)] text-sm text-[var(--text-secondary)] animate-fade-in-up">
-          {statusMessage}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Helper Components ──
-
-function PartBadge({ part }: { part: 1 | 2 | 3 }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-panel-elevated)] border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)]">
-      <span
-        className={`w-2 h-2 rounded-full ${
-          part === 1
-            ? 'bg-[var(--cyan-glow)]'
-            : part === 2
-              ? 'bg-[var(--orange-cue)]'
-              : 'bg-[var(--cyan-glow-dim)]'
-        }`}
-      />
-      Part {part}
-    </span>
-  );
-}
-
-function QuestionDisplay({ text }: { text: string }) {
-  return (
-    <div className="max-w-lg p-4 rounded-lg bg-[var(--bg-panel-elevated)] border border-[var(--border)]">
-      <p className="text-base sm:text-lg leading-relaxed text-[var(--text-primary)]">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-// ── ASR Helper ──
-async function transcribeAudio(blob: Blob): Promise<string> {
-  try {
-    const formData = new FormData();
-    formData.append('audio', blob, 'recording.webm');
-
-    const res = await fetch('/api/asr', {
-      method: 'POST',
-      body: formData,
     });
+    streamRef.current = stream;
+    return stream;
+  }, []);
 
-    if (!res.ok) throw new Error('ASR failed');
-
-    const data = (await res.json()) as { text: string };
-    return data.text || '';
-  } catch (err) {
-    console.error('Transcription error:', err);
-    return '[Transcription unavailable]';
+  async function runMicCheck() {
+    setError("");
+    try {
+      const stream = await ensureStream();
+      const context = new AudioContext();
+      const analyser = context.createAnalyser();
+      const source = context.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 256;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteFrequencyData(data);
+        setMicLevel(Math.min(100, (data.reduce((a, b) => a + b, 0) / data.length) * 1.6));
+      };
+      const meter = setInterval(tick, 60);
+      const recorder = new MediaRecorder(stream, preferredMimeType() ? { mimeType: preferredMimeType() } : undefined);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
+      recorder.start();
+      setMicMessage("Speak naturally for five seconds…");
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      recorder.stop();
+      await new Promise<void>((resolve) => {
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          if (checkAudioUrl) URL.revokeObjectURL(checkAudioUrl);
+          setCheckAudioUrl(URL.createObjectURL(blob));
+          resolve();
+        };
+      });
+      clearInterval(meter);
+      source.disconnect();
+      await context.close();
+      setMicLevel(0);
+      setMicReady(true);
+      setMicMessage("Microphone ready — play back your sample");
+    } catch {
+      setMicReady(false);
+      setMicMessage("Microphone permission is required");
+      setError("Allow microphone access in your browser, then run the check again.");
+    }
   }
+
+  const uploadTurn = useCallback(async (step: ExamStep, blob: Blob, durationSeconds: number) => {
+    try {
+      const wav = await blobToMonoWav(blob);
+      const form = new FormData();
+      form.append("audio", wav, `${step.id}.wav`);
+      form.append("metadata", JSON.stringify({
+        turnId: step.id,
+        part: step.part,
+        prompt: step.prompt,
+        durationSeconds
+      }));
+      const response = await fetch("/api/analyse-turn", { method: "POST", body: form });
+      if (!response.ok) throw new Error("analysis failed");
+      return await response.json() as TurnAnalysis;
+    } catch {
+      return {
+        turnId: step.id,
+        part: step.part,
+        prompt: step.prompt,
+        durationSeconds,
+        transcript: "",
+        segments: [],
+        audioEvidence: [],
+        quality: "insufficient"
+      } satisfies TurnAnalysis;
+    }
+  }, []);
+
+  const startRecording = useCallback(async (step: ExamStep) => {
+    const stream = await ensureStream();
+    chunksRef.current = [];
+    const recorder = new MediaRecorder(stream, preferredMimeType() ? { mimeType: preferredMimeType() } : undefined);
+    recorderRef.current = recorder;
+    recorder.ondataavailable = (event) => event.data.size && chunksRef.current.push(event.data);
+    recorder.onstop = () => {
+      const duration = Math.max(0.1, (performance.now() - recordingStartedRef.current) / 1000);
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+      analysesRef.current.push(uploadTurn(step, blob, duration));
+    };
+    recordingStartedRef.current = performance.now();
+    setRecordingSeconds(0);
+    setStatus("candidate");
+    recorder.start(1000);
+    intervalRef.current = setInterval(() => {
+      const seconds = Math.floor((performance.now() - recordingStartedRef.current) / 1000);
+      setRecordingSeconds(seconds);
+      if (step.maxSeconds && seconds >= step.maxSeconds) {
+        recorder.stop();
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setStepIndex((value) => value + 1);
+      }
+    }, 250);
+  }, [ensureStream, uploadTurn]);
+
+  const playStep = useCallback(async (step: ExamStep) => {
+    if (!manifest) return;
+    const src = manifest.items[step.prompt];
+    if (!src) {
+      setError(`Examiner audio is missing for ${step.id}.`);
+      return;
+    }
+    setStatus("examiner");
+    const audio = new Audio(src);
+    audioRef.current = audio;
+    audio.preload = "auto";
+    audio.onended = () => {
+      if (step.kind === "prep") {
+        setStatus("prep");
+        setCountdown(60);
+        let left = 60;
+        prepTimerRef.current = setInterval(() => {
+          left -= 1;
+          setCountdown(left);
+          if (left <= 0) {
+            if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+            setStepIndex((value) => value + 1);
+          }
+        }, 1000);
+      } else if (step.record) {
+        startRecording(step).catch(() => setError("The microphone could not start."));
+      } else if (step.kind === "finish") {
+        finishTest();
+      } else {
+        setStepIndex((value) => value + 1);
+      }
+    };
+    audio.onerror = () => setError("Examiner audio could not be played. Check your connection.");
+    await audio.play();
+  }, [manifest, startRecording]);
+
+  useEffect(() => {
+    if (screen !== "live" || !current) return;
+    playStep(current).catch(() => setError("Tap Resume audio to continue."));
+  }, [screen, stepIndex, current, playStep]);
+
+  async function startTest() {
+    if (!selectedTest || !manifest) return;
+    setError("");
+    try {
+      await ensureStream();
+      localStorage.setItem("tb-speaking-last-test", selectedId);
+      analysesRef.current = [];
+      setStepIndex(0);
+      setScreen("live");
+    } catch {
+      setError("Microphone access is required to start the speaking test.");
+    }
+  }
+
+  function doneSpeaking() {
+    const recorder = recorderRef.current;
+    if (!recorder || recorder.state !== "recording") return;
+    recorder.stop();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setStatus("uploading");
+    setStepIndex((value) => value + 1);
+  }
+
+  async function finishTest() {
+    setScreen("analysing");
+    setStatus("uploading");
+    const settled = await Promise.all(analysesRef.current);
+    const response = await fetch("/api/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: crypto.randomUUID(),
+        testId: selectedId,
+        completedAt: new Date().toISOString(),
+        analyses: settled
+      })
+    });
+    if (!response.ok) {
+      setError("Scoring could not be completed. Please keep this page open and try again.");
+      setScreen("home");
+      return;
+    }
+    const scored = await response.json();
+    setResult(scored);
+    localStorage.setItem("tb-speaking-latest-summary", JSON.stringify({
+      testId: selectedId,
+      date: new Date().toISOString(),
+      overall: scored.overall ?? null,
+      subBands: scored.subBands ?? null
+    }));
+    setScreen("result");
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  function abortTest() {
+    audioRef.current?.pause();
+    recorderRef.current?.state === "recording" && recorderRef.current.stop();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    setScreen("home");
+    setStatus("idle");
+  }
+
+  async function playFeedback() {
+    if (!result?.spokenFeedbackZh || feedbackPlaying) return;
+    setFeedbackPlaying(true);
+    try {
+      const response = await fetch("/api/feedback-audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: result.spokenFeedbackZh })
+      });
+      if (!response.ok) throw new Error();
+      const url = URL.createObjectURL(await response.blob());
+      const audio = new Audio(url);
+      audio.onended = () => {
+        setFeedbackPlaying(false);
+        URL.revokeObjectURL(url);
+      };
+      await audio.play();
+    } catch {
+      setFeedbackPlaying(false);
+      setError("Spoken feedback is temporarily unavailable; the complete written feedback is below.");
+    }
+  }
+
+  function downloadReport() {
+    const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${selectedId}-speaking-report.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  if (screen === "analysing") {
+    return (
+      <main className="shell">
+        <section className="exam-panel centred-panel">
+          <div className="analysis-orb" aria-hidden="true"><span /><span /><span /></div>
+          <p className="eyebrow">Evidence review in progress</p>
+          <h1>Analysing your speaking</h1>
+          <p className="muted max-copy">Your answers are being checked across all four criteria. Keep this page open.</p>
+          <div className="analysis-steps">
+            <span><Check size={17} /> Three-part evidence</span>
+            <span><Check size={17} /> Direct pronunciation audio</span>
+            <span><Check size={17} /> Two independent evaluations</span>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === "result" && result) {
+    return (
+      <main className="result-shell">
+        <section className="result-hero">
+          <p className="eyebrow">Practice report · {selectedId}</p>
+          {result.status === "scored" ? (
+            <>
+              <div className="band-lockup"><span className="band-number">{result.overall}</span><span>estimated overall band</span></div>
+              <div className="sub-bands">
+                {Object.entries(result.subBands).map(([key, value]) => (
+                  <div key={key}><strong>{String(value)}</strong><span>{key}</span></div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <h1>More evidence needed</h1>
+          )}
+          <p className="disclaimer">{result.label}</p>
+          <div className="result-actions">
+            {result.spokenFeedbackZh && (
+              <button className="primary" onClick={playFeedback}><Volume2 size={18} />{feedbackPlaying ? "正在播放" : "听中文点评"}</button>
+            )}
+            <button className="secondary" onClick={downloadReport}><Download size={18} />Download report</button>
+            <button className="secondary" onClick={() => { setResult(null); setScreen("home"); }}><RotateCcw size={18} />Try another test</button>
+          </div>
+        </section>
+
+        <section className="report">
+          {result.status !== "scored" ? (
+            <article className="report-card"><h2>为什么现在不给分</h2><p>{result.explanationZh}</p></article>
+          ) : (
+            <>
+              <article className="report-card diagnosis"><span>一句话诊断</span><h2>{result.diagnosisZh}</h2></article>
+              <h2 className="section-title">四项评分为什么</h2>
+              <div className="criteria-grid">
+                {Object.entries(result.criteria).map(([key, item]: [string, any]) => (
+                  <article className="report-card criterion-card" key={key}>
+                    <div className="criterion-head"><span>{key}</span><strong>{item.band}</strong></div>
+                    <h3>为什么是这个分数</h3><p>{item.why}</p>
+                    <h3>为什么还不是更高一档</h3><p>{item.why_not_higher}</p>
+                    <Evidence items={item.positive_evidence} tone="positive" />
+                    <Evidence items={item.limiting_evidence} tone="limit" />
+                  </article>
+                ))}
+              </div>
+              <h2 className="section-title">原话证据与修正</h2>
+              <div className="evidence-list">
+                {result.evidenceCorrections?.map((item: any, index: number) => (
+                  <article className="report-card correction" key={`${item.turn_id}-${index}`}>
+                    <span className="timecode">{item.turn_id} · {item.start?.toFixed?.(1) ?? item.start}s</span>
+                    <p className="original">{item.original}</p>
+                    <p className="improved">{item.improved}</p>
+                    <small>{item.reason_zh}</small>
+                  </article>
+                ))}
+              </div>
+              <h2 className="section-title">优先解决方案</h2>
+              <div className="priority-list">
+                {result.priorities?.map((item: any) => (
+                  <article className="report-card priority" key={item.rank}>
+                    <span>{String(item.rank).padStart(2, "0")}</span>
+                    <div><h3>{item.diagnosis_zh}</h3><p>{item.drill_zh}</p><small>{item.schedule_zh} · {item.success_measure_zh}</small></div>
+                  </article>
+                ))}
+              </div>
+              <h2 className="section-title">三个部分的表现</h2>
+              <div className="parts-report">
+                {Object.entries(result.partDiagnostics || {}).map(([key, value]) => (
+                  <article className="report-card" key={key}><span>{key.toUpperCase()}</span><p>{String(value)}</p></article>
+                ))}
+              </div>
+              <h2 className="section-title">七天训练计划</h2>
+              <ol className="week-plan">
+                {result.sevenDayPlan?.map((item: string, index: number) => <li key={index}><span>Day {index + 1}</span>{item}</li>)}
+              </ol>
+            </>
+          )}
+        </section>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (screen === "live" && current && selectedTest) {
+    const isPart2Card = current.part === 2 && ["prep", "long-turn"].includes(current.kind);
+    const partProgress = current.part === 1 ? "01" : current.part === 2 ? "02" : "03";
+    return (
+      <main className="live-shell">
+        <section className="exam-panel live-panel">
+          <header className="live-header">
+            <button className="icon-button" onClick={abortTest} aria-label="End test"><ArrowLeft size={20} /></button>
+            <div><p>IELTS Speaking Mock Test</p><span>{selectedId}</span></div>
+            <button className="end-button" onClick={abortTest}>End test</button>
+          </header>
+          <div className="part-track" aria-label={`Part ${current.part} of 3`}>
+            {[1, 2, 3].map((part) => <span key={part} className={part <= current.part ? "active" : ""} />)}
+          </div>
+          <div className="live-copy">
+            <p className="eyebrow">Part {current.part} <span>{partProgress}/03</span></p>
+            <h1>{current.kind === "prep" ? "Preparation" : current.kind === "long-turn" ? "Long turn" : "Interview"}</h1>
+          </div>
+
+          {isPart2Card ? (
+            <article className="cue-card">
+              <div className="cue-head">
+                <span>Part 2 cue card</span>
+                <strong>{status === "prep" ? fmt(countdown) : fmt(Math.max(0, 120 - recordingSeconds))}</strong>
+              </div>
+              <h2>{selectedTest.part2.cueCard[0]}</h2>
+              <ul>{selectedTest.part2.cueCard.slice(1).map((line) => <li key={line}>{line}</li>)}</ul>
+            </article>
+          ) : (
+            <div className={`audio-stage ${status}`}>
+              <div className="orb">
+                <span /><span /><span /><Volume2 size={30} />
+              </div>
+              <div className="wave" aria-hidden="true">{Array.from({ length: 19 }).map((_, index) => <i key={index} />)}</div>
+            </div>
+          )}
+
+          <div className="live-status" aria-live="polite">
+            {status === "examiner" && <><Headphones size={18} /><strong>Examiner is speaking</strong><span>Please listen</span></>}
+            {status === "candidate" && <><Mic2 size={18} /><strong>Your turn</strong><span>{fmt(recordingSeconds)}</span></>}
+            {status === "prep" && <><ShieldCheck size={18} /><strong>Prepare your answer</strong><span>You may make notes</span></>}
+            {status === "uploading" && <><ShieldCheck size={18} /><strong>Answer secured</strong><span>Preparing the next question</span></>}
+          </div>
+          <div className="live-controls">
+            {status === "candidate" ? (
+              <button className="primary done-button" onClick={doneSpeaking}><Square size={16} fill="currentColor" />Done speaking</button>
+            ) : (
+              <span className="conversation-live"><i /> Conversation is active</span>
+            )}
+          </div>
+          {error && <button className="resume" onClick={() => current && playStep(current)}><Play size={16} />Resume audio</button>}
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="shell">
+      <section className="home-panel">
+        <header className="brand">
+          <div className="brand-mark"><Mic2 size={23} /></div>
+          <div><strong>TB Speaking Lab</strong><span>Evidence-led IELTS practice</span></div>
+        </header>
+        <div className="home-grid">
+          <div className="home-copy">
+            <p className="eyebrow">Real test rhythm · British examiner</p>
+            <h1>Speak under<br /> <em>real pressure.</em></h1>
+            <p>A complete Part 1, Part 2 and Part 3 interview, followed by a precise four-criterion diagnosis in Chinese.</p>
+            <div className="feature-row">
+              <span><ShieldCheck size={17} />Private session</span>
+              <span><Volume2 size={17} />Clear UK voice</span>
+              <span><Mic size={17} />Audio evidence</span>
+            </div>
+          </div>
+          <div className="start-card">
+            <div className="test-picker">
+              <label htmlFor="test">Mock test set</label>
+              <select id="test" value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+                {tests.map((item) => <option key={item.id} value={item.id}>{item.id} · {item.title}</option>)}
+              </select>
+            </div>
+            <div className="device-check">
+              <div className="meter-head"><span><Mic size={18} />{micMessage}</span><strong>{micReady ? "Ready" : "Check"}</strong></div>
+              <div className="level-track"><span style={{ width: `${micLevel}%` }} /></div>
+              <div className="check-actions">
+                <button className="secondary" onClick={runMicCheck}><Mic size={17} />Check microphone</button>
+                {checkAudioUrl && <audio controls src={checkAudioUrl} />}
+              </div>
+            </div>
+            <button className="primary start-button" disabled={!tests.length || !manifest} onClick={startTest}>
+              Start test <span>11–14 min</span>
+            </button>
+            <p className="micro-copy">Independent IELTS-style practice — not an official IELTS test or score</p>
+            {error && <p className="error">{error}</p>}
+          </div>
+        </div>
+        <Footer />
+      </section>
+    </main>
+  );
+}
+
+function Evidence({ items, tone }: { items?: any[]; tone: "positive" | "limit" }) {
+  if (!items?.length) return null;
+  return (
+    <ul className={`criterion-evidence ${tone}`}>
+      {items.slice(0, 3).map((item, index) => (
+        <li key={index}><span>{item.turn_id} · {Number(item.start).toFixed(1)}s</span>{item.note}</li>
+      ))}
+    </ul>
+  );
+}
+
+function Footer() {
+  return <footer>海归湾国际教育（天津）雅思精准学习中心 <a href="tel:4000616820">400-061-6820</a></footer>;
 }
