@@ -48,6 +48,7 @@ test("two model families score independently and one call adjudicates all disput
   assert.match(scorer, /EVALUATOR_B_MODELS/);
   assert.match(scorer, /openai\/gpt-5-mini/);
   assert.match(scorer, /anthropic\/claude-sonnet-4\.5/);
+  assert.match(scorer, /google\/gemini-3-flash-preview/);
   assert.match(scorer, /disputedCriteria/);
   assert.match(scorer, /adjudication\.results/);
   assert.match(scorer, /timeoutMs:\s*50000/);
