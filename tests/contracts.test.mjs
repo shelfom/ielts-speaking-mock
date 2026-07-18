@@ -50,6 +50,9 @@ test("two model families score independently and one call adjudicates all disput
   assert.match(scorer, /anthropic\/claude-sonnet-4\.5/);
   assert.match(scorer, /disputedCriteria/);
   assert.match(scorer, /adjudication\.results/);
+  assert.match(scorer, /timeoutMs:\s*50000/);
+  assert.match(scorer, /timeoutMs:\s*25000/);
+  assert.match(scorer, /maxAttempts:\s*1/);
 });
 
 test("OpenRouter uses model fallbacks, strict schemas, response healing, and bounded attempts", () => {

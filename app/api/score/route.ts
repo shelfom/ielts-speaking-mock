@@ -166,9 +166,12 @@ async function scoreEvaluator(
     models,
     operation: `score_evaluator_${evaluatorId.toLowerCase()}`,
     sessionId: session.sessionId,
-    timeoutMs: 45000,
-    maxAttempts: 2,
-    maxTokens: 6500,
+    // Coze's public request edge closes around 90 seconds. OpenRouter already
+    // performs provider/model failover inside this call; the browser retries
+    // the complete, persisted score package if this bounded call fails.
+    timeoutMs: 50000,
+    maxAttempts: 1,
+    maxTokens: 4200,
     contract: {
       name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
       schema: evaluatorJsonSchema,
@@ -208,9 +211,9 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     models: ADJUDICATOR_MODELS,
     operation: "score_adjudication",
     sessionId: session.sessionId,
-    timeoutMs: 45000,
-    maxAttempts: 2,
-    maxTokens: 4000,
+    timeoutMs: 25000,
+    maxAttempts: 1,
+    maxTokens: 2200,
     contract: {
       name: "ielts_speaking_adjudication",
       schema: adjudicationJsonSchema,

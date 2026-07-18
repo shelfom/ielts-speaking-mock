@@ -91,8 +91,10 @@ not a successful complex sentence. Do not assign an IELTS band yet.
       models,
       operation: "analyse_turn",
       sessionId: metadata.sessionId,
-      timeoutMs: 45000,
-      maxAttempts: 2,
+      // Keep one public request below the hosting edge timeout. The client
+      // retains the raw Blob and retries this route without losing the turn.
+      timeoutMs: 42000,
+      maxAttempts: 1,
       maxTokens: 5000,
       requireParameters: false,
       contract: {
