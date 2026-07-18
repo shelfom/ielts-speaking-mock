@@ -1,3 +1,60 @@
+# TB IELTS Speaking Mock Examiner
+
+## 项目概览
+
+匿名 IELTS 口语模拟考试应用。支持 Part 1/2/3 完整流程，逐轮录音、服务端 AI 评分（FC/LR/GRA/P 四项 + 总分），返回中文书面反馈和可播放的语音反馈。
+
+## 核心目录
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── asr/route.ts        # 语音识别 (ASR) - coze-coding-dev-sdk ASRClient
+│   │   ├── score/route.ts      # AI 评分 - coze-coding-dev-sdk LLMClient (doubao-seed-2-0-pro)
+│   │   └── tts/route.ts        # 语音合成 (TTS) - coze-coding-dev-sdk TTSClient
+│   ├── page.tsx                 # 主考试页面 (client component)
+│   ├── layout.tsx               # 根布局
+│   └── globals.css              # 全局样式 + 设计 tokens
+├── components/exam/
+│   ├── audio-orb.tsx            # 中央音频光球组件
+│   ├── cue-card.tsx             # Part 2 橙色提示卡
+│   └── results-panel.tsx        # 成绩反馈面板
+├── hooks/
+│   └── use-audio-recorder.ts    # 浏览器录音 hook
+└── lib/
+    ├── types.ts                 # 核心类型定义
+    ├── question-bank.ts         # 题库 (placeholder, 待替换 128 套)
+    └── utils.ts                 # cn() 工具
+```
+
+## 考试流程
+
+1. **Idle** → 点击 Start Mock Test
+2. **Part 1** → 3 个短问题，每个录音 → ASR 转写
+3. **Part 2** → 1 分钟准备 + 1-2 分钟录音 → ASR 转写
+4. **Part 3** → 3 个讨论问题，每个录音 → ASR 转写
+5. **Scoring** → 所有转写文本发送到 LLM 评分
+6. **Results** → 显示分数 + 中文书面反馈 + TTS 语音反馈
+
+## API 接口
+
+| 路径 | 方法 | 说明 |
+|------|------|------|
+| `/api/asr` | POST (FormData) | 上传音频文件，返回转写文本 |
+| `/api/score` | POST (JSON) | 传入转写文本数组，返回 IELTS 评分 |
+| `/api/tts` | POST (JSON) | 传入中文文本，返回 TTS 音频 URI |
+
+## 设计系统
+
+- 深色音频优先 UI：深青黑背景 + 茄子皮面板
+- 中央音频光球：luminous cyan 呼吸/录音动画
+- Part 2 提示卡：橙色霓虹风格
+- 分数颜色：>=7 翠绿，>=5.5 琥珀，<5.5 珊瑚红
+- 详见 `DESIGN.md`
+
+---
+
 # 项目上下文
 
 ### 版本技术栈

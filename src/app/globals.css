@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'https://fonts.googleapis.cn/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -43,84 +44,66 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-sans:
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
-    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+    'Inter', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'Courier New', monospace;
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
   --font-serif:
     'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria,
     'Times New Roman', Times, serif;
 }
 
+/* ── TB IELTS Speaking Examiner: Dark Audio-First Theme ── */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --background: oklch(0.18 0.04 195);
+  --foreground: oklch(0.93 0.01 195);
+  --card: oklch(0.22 0.06 320);
+  --card-foreground: oklch(0.93 0.01 195);
+  --popover: oklch(0.27 0.06 320);
+  --popover-foreground: oklch(0.93 0.01 195);
+  --primary: oklch(0.78 0.14 195);
+  --primary-foreground: oklch(0.18 0.04 195);
+  --secondary: oklch(0.27 0.06 320);
+  --secondary-foreground: oklch(0.93 0.01 195);
+  --muted: oklch(0.27 0.06 320);
+  --muted-foreground: oklch(0.70 0.02 195);
+  --accent: oklch(0.72 0.18 55);
+  --accent-foreground: oklch(0.20 0.06 55);
+  --destructive: oklch(0.65 0.18 25);
+  --border: oklch(0.35 0.04 320);
+  --input: oklch(0.30 0.05 320);
+  --ring: oklch(0.78 0.14 195);
+  --chart-1: oklch(0.78 0.14 195);
+  --chart-2: oklch(0.72 0.18 55);
+  --chart-3: oklch(0.72 0.16 155);
+  --chart-4: oklch(0.65 0.18 25);
+  --chart-5: oklch(0.627 0.265 303.9);
+  --sidebar: oklch(0.22 0.06 320);
+  --sidebar-foreground: oklch(0.93 0.01 195);
+  --sidebar-primary: oklch(0.78 0.14 195);
+  --sidebar-primary-foreground: oklch(0.18 0.04 195);
+  --sidebar-accent: oklch(0.27 0.06 320);
+  --sidebar-accent-foreground: oklch(0.93 0.01 195);
+  --sidebar-border: oklch(0.35 0.04 320);
+  --sidebar-ring: oklch(0.78 0.14 195);
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Custom exam tokens */
+  --bg-surround: oklch(0.18 0.04 195);
+  --bg-panel: oklch(0.22 0.06 320);
+  --bg-panel-elevated: oklch(0.27 0.06 320);
+  --cyan-glow: oklch(0.78 0.14 195);
+  --cyan-glow-dim: oklch(0.55 0.10 195);
+  --orange-cue: oklch(0.72 0.18 55);
+  --orange-cue-dim: oklch(0.58 0.14 55);
+  --text-primary: oklch(0.93 0.01 195);
+  --text-secondary: oklch(0.70 0.02 195);
+  --text-on-orange: oklch(0.20 0.06 55);
+  --band-high: oklch(0.72 0.16 155);
+  --band-mid: oklch(0.72 0.14 85);
+  --band-low: oklch(0.65 0.18 25);
 }
 
 @layer base {
@@ -128,10 +111,144 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[var(--bg-surround)] text-[var(--text-primary)] antialiased;
+    font-family: var(--font-sans);
   }
 }
 
-body {
-  @apply font-sans;
+/* ── Audio Orb Animations ── */
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px 8px oklch(0.78 0.14 195 / 0.3);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 60px 16px oklch(0.78 0.14 195 / 0.5);
+  }
+}
+
+@keyframes orb-record {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px 8px oklch(0.78 0.14 195 / 0.5);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 80px 24px oklch(0.78 0.14 195 / 0.7);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-cue {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotateX(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px 2px oklch(0.78 0.14 195 / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px oklch(0.78 0.14 195 / 0.4);
+  }
+}
+
+.animate-orb-breathe {
+  animation: orb-breathe 2s ease-in-out infinite;
+}
+
+.animate-orb-record {
+  animation: orb-record 1s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: ripple 1.5s ease-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.animate-slide-in-cue {
+  animation: slide-in-cue 0.3s ease-out forwards;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ── Exam Panel ── */
+.exam-panel {
+  background: var(--bg-panel);
+  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+}
+
+/* ── Cyan Glow Button ── */
+.btn-cyan-glow {
+  background: var(--cyan-glow);
+  color: var(--bg-surround);
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+.btn-cyan-glow:hover {
+  box-shadow: 0 0 20px oklch(0.78 0.14 195 / 0.5);
+}
+
+/* ── Part 2 Cue Card ── */
+.cue-card {
+  background: var(--orange-cue);
+  color: var(--text-on-orange);
+  border-radius: var(--radius-lg);
+  animation: slide-in-cue 0.3s ease-out forwards;
+}
+
+/* ── Band Score Colors ── */
+.band-high { color: var(--band-high); }
+.band-mid { color: var(--band-mid); }
+.band-low { color: var(--band-low); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.04 320);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0.04 320);
 }
