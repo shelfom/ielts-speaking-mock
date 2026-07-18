@@ -18,6 +18,7 @@ type ChatJsonOptions<T> = {
   requireParameters?: boolean;
   reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high";
   signal?: AbortSignal;
+  responseMode?: "json_schema" | "json_object";
 };
 
 export class OpenRouterRequestError extends Error {
@@ -120,14 +121,16 @@ export async function chatJson<T>(
         messages,
         temperature: 0,
         max_tokens: options.maxTokens ?? 12000,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: options.contract.name,
-            strict: true,
-            schema: options.contract.schema
-          }
-        },
+        response_format: options.responseMode === "json_object"
+          ? { type: "json_object" }
+          : {
+              type: "json_schema",
+              json_schema: {
+                name: options.contract.name,
+                strict: true,
+                schema: options.contract.schema
+              }
+            },
         plugins: [{ id: "response-healing" }],
         ...(options.reasoningEffort
           ? {

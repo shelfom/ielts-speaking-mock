@@ -57,11 +57,13 @@ test("two model families score independently and one call adjudicates all disput
   assert.match(scorer, /EVALUATION_DEADLINE/);
   assert.match(scorer, /ADJUDICATION_DEADLINE/);
   assert.match(scorer, /reasoningEffort:\s*"minimal"/);
+  assert.match(scorer, /responseMode:\s*"json_object"/);
 });
 
 test("OpenRouter uses model fallbacks, strict schemas, response healing, and bounded attempts", () => {
   assert.match(openrouter, /models: options\.models/);
   assert.match(openrouter, /type: "json_schema"/);
+  assert.match(openrouter, /type: "json_object"/);
   assert.match(openrouter, /response-healing/);
   assert.match(openrouter, /maxAttempts/);
   assert.match(openrouter, /TRANSIENT_STATUSES/);

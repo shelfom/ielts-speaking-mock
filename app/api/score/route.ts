@@ -203,6 +203,7 @@ async function scoreEvaluator(
     maxTokens: 1800,
     reasoningEffort: "minimal",
     signal,
+    responseMode: "json_object",
     contract: {
       name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
       schema: evaluatorJsonSchema,
@@ -250,6 +251,7 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     maxTokens: 700,
     reasoningEffort: "minimal",
     signal,
+    responseMode: "json_object",
     contract: {
       name: "ielts_speaking_adjudication",
       schema: adjudicationJsonSchema,
