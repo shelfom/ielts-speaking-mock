@@ -42,11 +42,16 @@ export async function createSpeech(text: string): Promise<ArrayBuffer> {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      input: text,
-      voice_id: "zh_female_shuangkuai",
-      response_format: "mp3",
-      speed: 1.0,
-      sample_rate: 24000
+      req_params: {
+        audio_params: {
+          format: "mp3",
+          sample_rate: 24000,
+          speech_rate: 0,
+          loudness_rate: 0
+        },
+        text: text,
+        speaker: "zh_female_xiaohe_uranus_bigtts"
+      }
     }),
     signal: AbortSignal.timeout(120000)
   });
