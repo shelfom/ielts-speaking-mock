@@ -5,6 +5,10 @@ import {
   chatJson,
   isRetryableOpenRouterError
 } from "../lib/openrouter";
+import {
+  adjudicationJsonSchema,
+  evaluatorJsonSchema
+} from "../lib/scoring-contracts";
 
 const originalFetch = globalThis.fetch;
 process.env.OPENROUTER_API_KEY = "test-only-key";
@@ -133,3 +137,16 @@ test("does not retry permanent authentication or credit failures", async () => {
   assert.equal(call, 1);
 });
 
+test("provider-facing scoring schemas avoid unsupported numeric constraints", () => {
+  const schemaText = JSON.stringify({
+    evaluatorJsonSchema,
+    adjudicationJsonSchema
+  });
+  for (const keyword of ["multipleOf", "minimum", "maximum", "minItems"]) {
+    assert.equal(
+      schemaText.includes(`"${keyword}"`),
+      false,
+      `provider-facing schema must not contain ${keyword}`
+    );
+  }
+});

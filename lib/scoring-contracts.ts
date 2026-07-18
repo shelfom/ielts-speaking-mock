@@ -159,8 +159,8 @@ const scoreEvidenceJsonSchema = {
   additionalProperties: false,
   properties: {
     turn_id: string,
-    start: nonNegativeNumber,
-    end: nonNegativeNumber,
+    start: number,
+    end: number,
     audio_feature: {
       anyOf: [
         {
@@ -304,8 +304,8 @@ export const evaluatorJsonSchema = {
         additionalProperties: false,
         properties: {
           turn_id: string,
-          start: nonNegativeNumber,
-          end: nonNegativeNumber,
+          start: number,
+          end: number,
           original: string,
           improved: string,
           reason_zh: string
