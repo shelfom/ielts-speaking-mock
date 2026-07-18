@@ -27,6 +27,12 @@ kill_port_if_listening() {
 
 echo "Clearing port ${DEPLOY_RUN_PORT} before start."
 kill_port_if_listening
+
+# Pass through OpenRouter secrets from project environment to Next.js runtime
+export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+export OPENROUTER_AUDIO_MODEL="${OPENROUTER_AUDIO_MODEL:-mistralai/voxtral-small-24b-2507}"
+export OPENROUTER_SCORING_MODEL="${OPENROUTER_SCORING_MODEL:-deepseek/deepseek-v4-flash}"
+
 echo "Starting Next.js dev server on port ${DEPLOY_RUN_PORT}..."
 
 PORT=${DEPLOY_RUN_PORT} pnpm next dev --port ${DEPLOY_RUN_PORT}

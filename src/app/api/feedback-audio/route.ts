@@ -10,12 +10,9 @@ export async function POST(request: NextRequest) {
     if (typeof text !== "string" || text.length < 20 || text.length > 1800) {
       return NextResponse.json({ error: "invalid feedback text" }, { status: 400 });
     }
-    const audio = await createSpeech(text);
-    return new NextResponse(audio, {
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "no-store"
-      }
+    const { audioUri, audioSize } = await createSpeech(text);
+    return NextResponse.json({ audioUri, audioSize }, {
+      headers: { "Cache-Control": "no-store" }
     });
   } catch (error) {
     console.error("feedback-audio", error);

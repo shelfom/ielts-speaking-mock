@@ -2,7 +2,7 @@
 
 ## 项目概览
 
-匿名 IELTS 口语模拟考试应用。支持 Part 1/2/3 完整流程，逐轮录音、服务端 OpenRouter 音频分析 + 双评估器评分 + 仲裁，返回中文书面反馈和可播放的 Mandarin 语音反馈。
+匿名 IELTS 口语模拟考试应用。支持 Part 1/2/3 完整流程，逐轮录音、服务端 Coze 集成 API（ASR + LLM 分析 + 双评估器评分 + 仲裁），返回中文书面反馈和可播放的 Mandarin 语音反馈。
 
 ## 核心目录
 
@@ -10,15 +10,15 @@
 src/
 ├── app/
 │   ├── api/
-│   │   ├── analyse-turn/route.ts  # 单轮音频分析 (OpenRouter audio model)
-│   │   ├── score/route.ts         # 双评估器评分 + 仲裁 (OpenRouter scoring model)
-│   │   └── feedback-audio/route.ts # Mandarin TTS 语音反馈 (minimax/speech-2.8-hd)
+│   │   ├── analyse-turn/route.ts  # 单轮音频分析 (Coze ASR + LLM)
+│   │   ├── score/route.ts         # 双评估器评分 + 仲裁 (Coze LLM)
+│   │   └── feedback-audio/route.ts # Mandarin TTS 语音反馈 (Coze TTS)
 │   ├── page.tsx                    # 主考试页面 (client component)
 │   ├── layout.tsx                  # 根布局
 │   └── globals.css                 # 全局样式 + 设计 tokens
 ├── lib/
 │   ├── audio.ts                    # blobToMonoWav + preferredMimeType
-│   ├── openrouter.ts               # OpenRouter API 封装 (chatJson + createSpeech)
+│   ├── openrouter.ts               # Coze 集成 API 封装 (chatJson + asrTranscribe + createSpeech)
 │   ├── rubric.ts                   # IELTS 评分标准 + OUTPUT_CONTRACT + roundHalf
 │   └── types.ts                    # 核心类型定义
 public/
@@ -48,16 +48,19 @@ tests/
 
 | 路径 | 方法 | 说明 |
 |------|------|------|
-| `/api/analyse-turn` | POST (FormData) | 上传 WAV 音频，OpenRouter audio model 返回转写+音频证据 |
+| `/api/analyse-turn` | POST (FormData) | 上传 WAV 音频，Coze ASR 转写 + LLM 分析返回音频证据 |
 | `/api/score` | POST (JSON) | 传入 analyses 数组，双评估器独立评分，>0.5 分差触发仲裁 |
-| `/api/feedback-audio` | POST (JSON) | 传入中文文本，minimax TTS 返回 MP3 音频 |
+| `/api/feedback-audio` | POST (JSON) | 传入中文文本，Coze TTS 返回 MP3 音频 URI |
 
 ## 环境变量
 
 | 变量 | 说明 |
 |------|------|
-| `OPENROUTER_API_KEY` | OpenRouter API 密钥 |
-| `OPENROUTER_AUDIO_MODEL` | 音频分析模型 (默认: mistralai/voxtral-small-24b-2507) |
+| `COZE_INTEGRATION_BASE_URL` | Coze 集成 API 基础 URL (自动注入) |
+| `COZE_INTEGRATION_MODEL_BASE_URL` | Coze 模型 API 基础 URL (自动注入) |
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze 工作负载认证密钥 (自动注入) |
+| `COZE_LOOP_API_TOKEN` | Coze Loop API Token (自动注入) |
+| `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: deepseek-v3-2-251201) |
 | `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: deepseek/deepseek-v4-flash) |
 
 ## 设计系统

@@ -90,10 +90,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const [a, b] = await Promise.all([
+    const [aRaw, bRaw] = await Promise.all([
       chatJson([{ role: "system", content: "Score independently. Never infer another evaluator's judgement." }, { role: "user", content: evaluatorPrompt("A", session) }]),
       chatJson([{ role: "system", content: "Score independently. Never infer another evaluator's judgement." }, { role: "user", content: evaluatorPrompt("B", session) }])
     ]);
+    const a = aRaw as Record<string, any>;
+    const b = bRaw as Record<string, any>;
 
     if (a.evidence_status !== "complete" || b.evidence_status !== "complete") {
       return NextResponse.json({

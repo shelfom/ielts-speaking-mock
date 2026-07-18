@@ -5,6 +5,15 @@ template = "nextjs"
 version = "0.0.32"
 appliedPatches = [ ]
 
+[env.OPENROUTER_API_KEY]
+required = true
+
+[env.OPENROUTER_AUDIO_MODEL]
+default = "mistralai/voxtral-small-24b-2507"
+
+[env.OPENROUTER_SCORING_MODEL]
+default = "deepseek/deepseek-v4-flash"
+
 [dev]
 build = [ "bash", "./scripts/prepare.sh" ]
 run = [ "bash", "./scripts/dev.sh" ]
