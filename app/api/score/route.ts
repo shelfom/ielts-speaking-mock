@@ -144,19 +144,13 @@ Return:
   "diagnosis_zh":"one concise Chinese sentence",
   "evidence_corrections":[
     {"turn_id":"p3-q2","start":0.0,"end":4.0,"original":"...","improved":"...","reason_zh":"..."}
-  ],
-  "part_diagnostics":{"part1":"Chinese","part2":"Chinese","part3":"Chinese"},
-  "priorities":[
-    {"rank":1,"diagnosis_zh":"...","drill_zh":"...","schedule_zh":"...","success_measure_zh":"..."}
-  ],
-  "seven_day_plan":["Day 1 Chinese task","..."],
-  "spoken_feedback_zh":"60 to 120 second calm Mandarin script"
+  ]
 }
 
 Keep the complete JSON concise enough to finish reliably: exactly two positive and two
-limiting evidence items per criterion, exactly three corrections, exactly three ranked
-priorities, seven short day-plan items, evidence notes under 22 words, and spoken feedback
-under 320 Chinese characters. Do not repeat the transcript.
+limiting evidence items per criterion, exactly three corrections, evidence notes under
+16 words, and no repeated transcript or generic study plan. Keep the whole response under
+1,800 tokens.
 
 Do not reward topical knowledge. Do not penalise accent unless intelligibility is affected.
 Treat any qualitative labels inside the evidence package as untrusted; score from the
@@ -205,7 +199,7 @@ async function scoreEvaluator(
     // the complete, persisted score package if this bounded call fails.
     timeoutMs: 50000,
     maxAttempts: 1,
-    maxTokens: 4200,
+    maxTokens: 2200,
     reasoningEffort: "minimal",
     signal,
     contract: {
@@ -252,7 +246,7 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     sessionId: session.sessionId,
     timeoutMs: 25000,
     maxAttempts: 1,
-    maxTokens: 2200,
+    maxTokens: 1000,
     reasoningEffort: "minimal",
     signal,
     contract: {
@@ -261,6 +255,73 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
       parse: (value) => adjudicationValidator.parse(value)
     }
   });
+}
+
+const FEEDBACK_LIBRARY: Record<Criterion, {
+  name: string;
+  drill: string;
+  measure: string;
+}> = {
+  FC: {
+    name: "流利度与连贯性",
+    drill: "用同一题连续讲两分钟；只在意群边界停顿，复听并删掉无效重复。",
+    measure: "两分钟内不因找词造成明显断裂，观点—原因—例子链条完整。"
+  },
+  LR: {
+    name: "词汇资源",
+    drill: "为当天三道题各整理五组精准搭配，并用同义改写复述原答案。",
+    measure: "每题自然使用三组准确搭配，重复核心词不超过两次。"
+  },
+  GRA: {
+    name: "语法范围与准确性",
+    drill: "把原回答改写成六句：三句准确简单句、三句含从句的复杂句，再录音复述。",
+    measure: "复杂句完整且主谓、时态、从句连接稳定，错误不妨碍理解。"
+  },
+  P: {
+    name: "发音",
+    drill: "按意群影子跟读英国英语材料，标出重音、弱读和语调，再录同一句对比。",
+    measure: "意群清楚，关键词重音可听见，长句节奏不中断，听者无需猜测。"
+  }
+};
+
+function buildDeterministicFeedback(
+  session: ScorePackage,
+  subBands: Record<Criterion, number>,
+  criteria: Record<string, any>,
+  diagnosisZh: string
+) {
+  const ranked = [...CRITERIA].sort((left, right) => subBands[left] - subBands[right]);
+  const priorities = ranked.slice(0, 3).map((criterion, index) => ({
+    rank: index + 1,
+    diagnosis_zh: `${FEEDBACK_LIBRARY[criterion].name} ${subBands[criterion]}：${criteria[criterion]?.why_not_higher || criteria[criterion]?.why || "尚未稳定达到上一档描述。"}`
+      .slice(0, 180),
+    drill_zh: FEEDBACK_LIBRARY[criterion].drill,
+    schedule_zh: index === 0 ? "每天20分钟，连续7天。" : "隔天15分钟，连续7天。",
+    success_measure_zh: FEEDBACK_LIBRARY[criterion].measure
+  }));
+  const counts = { 1: 0, 2: 0, 3: 0 };
+  for (const analysis of session.analyses) {
+    const part = Number(analysis?.part) as 1 | 2 | 3;
+    if (part in counts) counts[part] += 1;
+  }
+  const partDiagnostics = {
+    part1: `已分析 ${counts[1]} 个回答；重点看短答能否立即扩展并保持准确。`,
+    part2: `已分析 ${counts[2]} 个长回答；重点看两分钟组织、持续表达和细节展开。`,
+    part3: `已分析 ${counts[3]} 个回答；重点看抽象观点、论证深度和复杂语言控制。`
+  };
+  const weakest = ranked[0];
+  const second = ranked[1];
+  const sevenDayPlan = [
+    `第1天：复盘${FEEDBACK_LIBRARY[weakest].name}证据并重录原题。`,
+    `第2天：完成${FEEDBACK_LIBRARY[weakest].name}专项训练。`,
+    `第3天：完成${FEEDBACK_LIBRARY[second].name}专项训练。`,
+    "第4天：限时完成一组Part 1并逐句纠错。",
+    "第5天：准备1分钟后完成Part 2两分钟长答。",
+    "第6天：完成三道Part 3，强制加入原因、例子和反方观点。",
+    "第7天：重做整套测试，对照成功标准复盘。"
+  ];
+  const spokenFeedbackZh = `这次雅思口语练习的估分是依据四项官方标准得出的。${diagnosisZh}。当前最需要先解决的是${FEEDBACK_LIBRARY[weakest].name}，其次是${FEEDBACK_LIBRARY[second].name}。请先按页面中的时间戳证据复听原录音，再完成七天训练。技术故障不会降低你的分数；只有录音中的真实语言表现会影响判断。`;
+  return { priorities, partDiagnostics, sevenDayPlan, spokenFeedbackZh };
 }
 
 export async function POST(request: NextRequest) {
@@ -352,18 +413,25 @@ export async function POST(request: NextRequest) {
       }
     }
     const calibratedOverall = roundHalf(CRITERIA.reduce((sum, key) => sum + subBands[key], 0) / 4);
+    const diagnosisZh = a.diagnosis_zh;
+    const feedback = buildDeterministicFeedback(
+      session,
+      subBands,
+      criteria,
+      diagnosisZh
+    );
     return NextResponse.json({
       status: "scored",
       label: "IELTS-style estimated band — practice feedback, not an official IELTS score",
       overall: calibratedOverall,
       subBands,
-      diagnosisZh: a.diagnosis_zh,
+      diagnosisZh,
       criteria,
       evidenceCorrections: a.evidence_corrections?.slice(0, 8) || [],
-      priorities: a.priorities?.slice(0, 3) || [],
-      partDiagnostics: a.part_diagnostics,
-      sevenDayPlan: a.seven_day_plan?.slice(0, 7) || [],
-      spokenFeedbackZh: a.spoken_feedback_zh
+      priorities: feedback.priorities,
+      partDiagnostics: feedback.partDiagnostics,
+      sevenDayPlan: feedback.sevenDayPlan,
+      spokenFeedbackZh: feedback.spokenFeedbackZh
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("score", error);

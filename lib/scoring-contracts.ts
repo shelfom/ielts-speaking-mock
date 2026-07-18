@@ -87,21 +87,7 @@ export const evaluatorValidator = z.object({
     original: z.string(),
     improved: z.string(),
     reason_zh: z.string().min(1)
-  }).strict()),
-  part_diagnostics: z.object({
-    part1: z.string(),
-    part2: z.string(),
-    part3: z.string()
-  }).strict(),
-  priorities: z.array(z.object({
-    rank: z.number().int().positive(),
-    diagnosis_zh: z.string().min(1),
-    drill_zh: z.string().min(1),
-    schedule_zh: z.string().min(1),
-    success_measure_zh: z.string().min(1)
-  }).strict()),
-  seven_day_plan: z.array(z.string().min(1)),
-  spoken_feedback_zh: z.string().min(1)
+  }).strict())
 }).strict().superRefine((value, context) => {
   if (value.evidence_status !== "complete") return;
   for (const criterion of criterionKeys) {
@@ -312,41 +298,14 @@ export const evaluatorJsonSchema = {
         },
         required: ["turn_id", "start", "end", "original", "improved", "reason_zh"]
       }
-    },
-    part_diagnostics: {
-      type: "object",
-      additionalProperties: false,
-      properties: { part1: string, part2: string, part3: string },
-      required: ["part1", "part2", "part3"]
-    },
-    priorities: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          rank: { type: "integer" },
-          diagnosis_zh: string,
-          drill_zh: string,
-          schedule_zh: string,
-          success_measure_zh: string
-        },
-        required: ["rank", "diagnosis_zh", "drill_zh", "schedule_zh", "success_measure_zh"]
-      }
-    },
-    seven_day_plan: { type: "array", items: string },
-    spoken_feedback_zh: string
+    }
   },
   required: [
     "evaluator_id",
     "evidence_status",
     "criteria",
     "diagnosis_zh",
-    "evidence_corrections",
-    "part_diagnostics",
-    "priorities",
-    "seven_day_plan",
-    "spoken_feedback_zh"
+    "evidence_corrections"
   ]
 };
 
