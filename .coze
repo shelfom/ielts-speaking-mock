@@ -19,5 +19,5 @@ build = [ "pnpm", "install" ]
 run = [ "pnpm", "run", "dev" ]
 
 [deploy]
-build = [ "sh", "-c", "npm install && npm run build" ]
-run = [ "sh", "-c", "npm start" ]
+build = [ "bash", "scripts/deploy-build.sh" ]
+run = [ "bash", "scripts/deploy-start.sh" ]
