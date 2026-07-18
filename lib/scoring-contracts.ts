@@ -187,7 +187,10 @@ const criterionJsonSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
-    band: { type: "number", minimum: 0, maximum: 9, multipleOf: 0.5 },
+    // Keep the provider-facing schema structural. Some strict-output
+    // providers reject numeric JSON-Schema constraints such as multipleOf;
+    // Zod below remains the authoritative range/half-band validator.
+    band: number,
     why: string,
     why_not_higher: string,
     positive_evidence: { type: "array", items: scoreEvidenceJsonSchema },
@@ -322,7 +325,7 @@ export const evaluatorJsonSchema = {
         type: "object",
         additionalProperties: false,
         properties: {
-          rank: { type: "integer", minimum: 1 },
+          rank: { type: "integer" },
           diagnosis_zh: string,
           drill_zh: string,
           schedule_zh: string,
@@ -353,16 +356,15 @@ export const adjudicationJsonSchema = {
   properties: {
     results: {
       type: "array",
-      minItems: 1,
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
           criterion: { type: "string", enum: criterionKeys },
-          band: { type: "number", minimum: 0, maximum: 9, multipleOf: 0.5 },
+          band: number,
           reason_zh: string,
-          positive_evidence: { type: "array", minItems: 1, items: scoreEvidenceJsonSchema },
-          limiting_evidence: { type: "array", minItems: 1, items: scoreEvidenceJsonSchema }
+          positive_evidence: { type: "array", items: scoreEvidenceJsonSchema },
+          limiting_evidence: { type: "array", items: scoreEvidenceJsonSchema }
         },
         required: [
           "criterion",

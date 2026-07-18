@@ -11,7 +11,8 @@ import {
 } from "@/lib/scoring-contracts";
 import {
   chatJson,
-  isRetryableOpenRouterError
+  isRetryableOpenRouterError,
+  OpenRouterRequestError
 } from "@/lib/openrouter";
 import { OUTPUT_CONTRACT, RUBRIC, roundHalf } from "@/lib/rubric";
 import type { ScorePackage } from "@/lib/types";
@@ -167,7 +168,7 @@ async function scoreEvaluator(
     sessionId: session.sessionId,
     timeoutMs: 45000,
     maxAttempts: 2,
-    maxTokens: 12000,
+    maxTokens: 6500,
     contract: {
       name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
       schema: evaluatorJsonSchema,
@@ -209,7 +210,7 @@ Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evid
     sessionId: session.sessionId,
     timeoutMs: 45000,
     maxAttempts: 2,
-    maxTokens: 7000,
+    maxTokens: 4000,
     contract: {
       name: "ielts_speaking_adjudication",
       schema: adjudicationJsonSchema,
@@ -325,6 +326,21 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 503,
+          headers: { "Cache-Control": "no-store" }
+        }
+      );
+    }
+    if (error instanceof OpenRouterRequestError) {
+      return NextResponse.json(
+        {
+          status: "provider_error",
+          code: "SCORING_PROVIDER_REJECTED",
+          diagnosticCode: error.code,
+          providerStatus: error.status || null,
+          messageZh: "评分服务暂时无法接受本次请求。你的完整测试证据仍保存在本页面，可以直接重试，不必重考。"
+        },
+        {
+          status: 502,
           headers: { "Cache-Control": "no-store" }
         }
       );
