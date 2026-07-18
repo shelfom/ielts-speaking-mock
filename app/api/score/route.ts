@@ -182,34 +182,48 @@ async function scoreEvaluator(
   models: string[],
   signal?: AbortSignal
 ) {
-  return chatJson([
-    {
-      role: "system",
-      content: "Score independently. Never infer another evaluator's judgement."
-    },
-    {
-      role: "user",
-      content: evaluatorPrompt(evaluatorId, session)
+  try {
+    return await chatJson([
+      {
+        role: "system",
+        content: "Score independently. Never infer another evaluator's judgement."
+      },
+      {
+        role: "user",
+        content: evaluatorPrompt(evaluatorId, session)
+      }
+    ], {
+      models,
+      operation: `score_evaluator_${evaluatorId.toLowerCase()}`,
+      sessionId: session.sessionId,
+      // Coze's public request edge closes around 90 seconds. OpenRouter already
+      // performs provider/model failover inside this call; the browser retries
+      // the complete, persisted score package if this bounded call fails.
+      timeoutMs: 50000,
+      maxAttempts: 1,
+      maxTokens: 1800,
+      reasoningEffort: "minimal",
+      signal,
+      responseMode: "json_object",
+      contract: {
+        name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
+        schema: evaluatorJsonSchema,
+        parse: (value) => evaluatorValidator.parse(value)
+      }
+    });
+  } catch (error) {
+    if (error instanceof OpenRouterRequestError) {
+      throw new OpenRouterRequestError({
+        message: error.message,
+        status: error.status,
+        retryable: error.retryable,
+        retryAfterSeconds: error.retryAfterSeconds,
+        code: `EVALUATOR_${evaluatorId}_${error.code}`,
+        detail: error.detail
+      });
     }
-  ], {
-    models,
-    operation: `score_evaluator_${evaluatorId.toLowerCase()}`,
-    sessionId: session.sessionId,
-    // Coze's public request edge closes around 90 seconds. OpenRouter already
-    // performs provider/model failover inside this call; the browser retries
-    // the complete, persisted score package if this bounded call fails.
-    timeoutMs: 50000,
-    maxAttempts: 1,
-    maxTokens: 1800,
-    reasoningEffort: "minimal",
-    signal,
-    responseMode: "json_object",
-    contract: {
-      name: `ielts_speaking_evaluator_${evaluatorId.toLowerCase()}`,
-      schema: evaluatorJsonSchema,
-      parse: (value) => evaluatorValidator.parse(value)
-    }
-  });
+    throw error;
+  }
 }
 
 async function adjudicate(
@@ -458,6 +472,7 @@ export async function POST(request: NextRequest) {
           status: "provider_error",
           code: "SCORING_PROVIDER_REJECTED",
           diagnosticCode: error.code,
+          diagnosticDetail: error.detail || null,
           providerStatus: error.status || null,
           messageZh: "评分服务暂时无法接受本次请求。你的完整测试证据仍保存在本页面，可以直接重试，不必重考。"
         },

@@ -26,19 +26,22 @@ export class OpenRouterRequestError extends Error {
   readonly retryable: boolean;
   readonly retryAfterSeconds?: number;
   readonly code: string;
+  readonly detail?: string;
 
   constructor({
     message,
     status,
     retryable,
     retryAfterSeconds,
-    code
+    code,
+    detail
   }: {
     message: string;
     status?: number;
     retryable: boolean;
     retryAfterSeconds?: number;
     code: string;
+    detail?: string;
   }) {
     super(message);
     this.name = "OpenRouterRequestError";
@@ -46,6 +49,7 @@ export class OpenRouterRequestError extends Error {
     this.retryable = retryable;
     this.retryAfterSeconds = retryAfterSeconds;
     this.code = code;
+    this.detail = detail;
   }
 }
 
@@ -55,17 +59,22 @@ function apiKey(): string {
   return key;
 }
 
-function safeProviderCode(body: string) {
+function safeProviderError(body: string) {
   try {
     const payload = JSON.parse(body);
-    return String(
-      payload?.error?.metadata?.provider_error_code ||
-      payload?.error?.code ||
-      payload?.code ||
-      "PROVIDER_ERROR"
-    );
+    return {
+      code: String(
+        payload?.error?.metadata?.provider_error_code ||
+        payload?.error?.code ||
+        payload?.code ||
+        "PROVIDER_ERROR"
+      ),
+      detail: String(payload?.error?.message || payload?.message || "")
+        .replace(/\s+/g, " ")
+        .slice(0, 240) || undefined
+    };
   } catch {
-    return "PROVIDER_ERROR";
+    return { code: "PROVIDER_ERROR", detail: undefined };
   }
 }
 
@@ -165,6 +174,7 @@ export async function chatJson<T>(
 
       if (!response.ok) {
         const responseBody = await response.text();
+        const providerError = safeProviderError(responseBody);
         const retryAfterHeader = Number(response.headers.get("retry-after"));
         const retryAfterSeconds =
           Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
@@ -175,7 +185,8 @@ export async function chatJson<T>(
           status: response.status,
           retryable: TRANSIENT_STATUSES.has(response.status),
           retryAfterSeconds,
-          code: safeProviderCode(responseBody)
+          code: providerError.code,
+          detail: providerError.detail
         });
       }
 
