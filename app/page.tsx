@@ -8,18 +8,32 @@ import {
   Mic,
   Mic2,
   Play,
+  RefreshCw,
   RotateCcw,
   ShieldCheck,
   Square,
+  Trash2,
   Volume2
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { blobToMonoWav, preferredMimeType } from "@/lib/audio";
-import type { ExamStep, MockTest, TurnAnalysis } from "@/lib/types";
+import type {
+  ExamStep,
+  MockTest,
+  ScorePackage,
+  TurnAnalysis
+} from "@/lib/types";
 
-type Screen = "home" | "live" | "analysing" | "result";
+type Screen = "home" | "live" | "analysing" | "recovery" | "result";
 type Status = "idle" | "examiner" | "prep" | "candidate" | "uploading";
 type AudioManifest = { items: Record<string, string> };
+type RawTurn = {
+  step: ExamStep;
+  blob: Blob;
+  durationSeconds: number;
+};
+
+const PENDING_SCORE_KEY = "tb-speaking-pending-score-v1";
 
 const SAY = {
   welcome: "Good morning. My name is Emma. This is an independent IELTS-style speaking practice test.",
@@ -83,6 +97,9 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
   const [feedbackPlaying, setFeedbackPlaying] = useState(false);
+  const [pendingScore, setPendingScore] = useState<ScorePackage | null>(null);
+  const [scoringMessage, setScoringMessage] = useState("Building your evidence package");
+  const [scoreBusy, setScoreBusy] = useState(false);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -92,9 +109,27 @@ export default function Home() {
   const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stepRef = useRef(0);
   const analysesRef = useRef<Promise<TurnAnalysis>[]>([]);
+  const pendingTurnsRef = useRef<Map<string, RawTurn>>(new Map());
+  const sessionIdRef = useRef("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    let restored: ScorePackage | null = null;
+    try {
+      const raw = sessionStorage.getItem(PENDING_SCORE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ScorePackage;
+        if (parsed?.sessionId && parsed?.testId && Array.isArray(parsed?.analyses)) {
+          restored = parsed;
+          setPendingScore(parsed);
+          sessionIdRef.current = parsed.sessionId;
+          setSelectedId(parsed.testId);
+          setScreen("recovery");
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(PENDING_SCORE_KEY);
+    }
     Promise.all([
       fetch("/data/mock-tests.json").then((response) => response.json()),
       fetch("/data/examiner-audio.json").then((response) => response.json())
@@ -103,7 +138,10 @@ export default function Home() {
         setTests(testData.tests);
         setManifest(audioData);
         const saved = localStorage.getItem("tb-speaking-last-test");
-        if (saved && testData.tests.some((item: MockTest) => item.id === saved)) setSelectedId(saved);
+        const preferred = restored?.testId || saved;
+        if (preferred && testData.tests.some((item: MockTest) => item.id === preferred)) {
+          setSelectedId(preferred);
+        }
       })
       .catch(() => setError("The test bank could not be loaded. Please refresh."));
   }, []);
@@ -114,7 +152,9 @@ export default function Home() {
 
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => {
-      if (screen === "live" || screen === "analysing") event.preventDefault();
+      if (screen === "live" || screen === "analysing" || screen === "recovery") {
+        event.preventDefault();
+      }
     };
     window.addEventListener("beforeunload", guard);
     return () => window.removeEventListener("beforeunload", guard);
@@ -190,33 +230,59 @@ export default function Home() {
     }
   }
 
-  const uploadTurn = useCallback(async (step: ExamStep, blob: Blob, durationSeconds: number) => {
-    try {
-      const wav = await blobToMonoWav(blob);
+  const emptyAnalysis = useCallback((turn: RawTurn): TurnAnalysis => ({
+    turnId: turn.step.id,
+    part: turn.step.part,
+    prompt: turn.step.prompt,
+    durationSeconds: turn.durationSeconds,
+    transcript: "",
+    segments: [],
+    audioEvidence: [],
+    performanceCounts: {
+      approximateWords: 0,
+      falseStartOrRepairClusters: 0,
+      clearCoherenceLosses: 0,
+      successfulComplexSentences: 0,
+      flawedComplexAttempts: 0,
+      notableLessCommonOrIdiomaticItems: 0
+    },
+    quality: "insufficient"
+  }), []);
+
+  const uploadTurn = useCallback(async (turn: RawTurn, maxAttempts = 2) => {
+    const wav = await blobToMonoWav(turn.blob);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       const form = new FormData();
-      form.append("audio", wav, `${step.id}.wav`);
+      form.append("audio", wav, `${turn.step.id}.wav`);
       form.append("metadata", JSON.stringify({
-        turnId: step.id,
-        part: step.part,
-        prompt: step.prompt,
-        durationSeconds
+        sessionId: sessionIdRef.current,
+        turnId: turn.step.id,
+        part: turn.step.part,
+        prompt: turn.step.prompt,
+        durationSeconds: turn.durationSeconds
       }));
-      const response = await fetch("/api/analyse-turn", { method: "POST", body: form });
-      if (!response.ok) throw new Error("analysis failed");
-      return await response.json() as TurnAnalysis;
-    } catch {
-      return {
-        turnId: step.id,
-        part: step.part,
-        prompt: step.prompt,
-        durationSeconds,
-        transcript: "",
-        segments: [],
-        audioEvidence: [],
-        quality: "insufficient"
-      } satisfies TurnAnalysis;
+      try {
+        const response = await fetch("/api/analyse-turn", { method: "POST", body: form });
+        if (response.ok) {
+          const analysis = await response.json() as TurnAnalysis;
+          pendingTurnsRef.current.delete(turn.step.id);
+          return analysis;
+        }
+        if (response.status === 422) return emptyAnalysis(turn);
+        const payload = await response.json().catch(() => null);
+        const retryable = response.status === 503 && payload?.status === "retryable_error";
+        if (!retryable || attempt >= maxAttempts) return emptyAnalysis(turn);
+        await new Promise((resolve) => setTimeout(
+          resolve,
+          Math.min(3000, Math.max(700, Number(payload?.retryAfterSeconds || 1) * 1000))
+        ));
+      } catch {
+        if (attempt >= maxAttempts) return emptyAnalysis(turn);
+        await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+      }
     }
-  }, []);
+    return emptyAnalysis(turn);
+  }, [emptyAnalysis]);
 
   const startRecording = useCallback(async (step: ExamStep) => {
     const stream = await ensureStream();
@@ -227,7 +293,9 @@ export default function Home() {
     recorder.onstop = () => {
       const duration = Math.max(0.1, (performance.now() - recordingStartedRef.current) / 1000);
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
-      analysesRef.current.push(uploadTurn(step, blob, duration));
+      const rawTurn = { step, blob, durationSeconds: duration };
+      pendingTurnsRef.current.set(step.id, rawTurn);
+      analysesRef.current.push(uploadTurn(rawTurn));
     };
     recordingStartedRef.current = performance.now();
     setRecordingSeconds(0);
@@ -291,6 +359,10 @@ export default function Home() {
     try {
       await ensureStream();
       localStorage.setItem("tb-speaking-last-test", selectedId);
+      sessionStorage.removeItem(PENDING_SCORE_KEY);
+      setPendingScore(null);
+      sessionIdRef.current = crypto.randomUUID();
+      pendingTurnsRef.current.clear();
       analysesRef.current = [];
       setStepIndex(0);
       setScreen("live");
@@ -308,36 +380,100 @@ export default function Home() {
     setStepIndex((value) => value + 1);
   }
 
+  function stopMicrophone() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  function persistPendingScore(scorePackage: ScorePackage) {
+    setPendingScore(scorePackage);
+    sessionStorage.setItem(PENDING_SCORE_KEY, JSON.stringify(scorePackage));
+  }
+
+  function clearPendingScore() {
+    setPendingScore(null);
+    sessionStorage.removeItem(PENDING_SCORE_KEY);
+    pendingTurnsRef.current.clear();
+  }
+
+  async function submitScore(scorePackage: ScorePackage, allowAutomaticRetry: boolean) {
+    setScoreBusy(true);
+    setScreen("analysing");
+    setScoringMessage("Two independent evaluators are reviewing your evidence");
+    const clientAttempts = allowAutomaticRetry ? 2 : 1;
+    for (let attempt = 1; attempt <= clientAttempts; attempt += 1) {
+      try {
+        const response = await fetch("/api/score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(scorePackage)
+        });
+        const payload = await response.json().catch(() => null);
+        if (response.ok) {
+          setResult(payload);
+          localStorage.setItem("tb-speaking-latest-summary", JSON.stringify({
+            testId: scorePackage.testId,
+            date: new Date().toISOString(),
+            overall: payload.overall ?? null,
+            subBands: payload.subBands ?? null
+          }));
+          clearPendingScore();
+          setScoreBusy(false);
+          setScreen("result");
+          return;
+        }
+
+        const retryable =
+          response.status === 503 &&
+          payload?.status === "retryable_error";
+        if (retryable && attempt < clientAttempts) {
+          setScoringMessage("A provider is busy — switching route and retrying");
+          await new Promise((resolve) => setTimeout(
+            resolve,
+            Math.min(4000, Math.max(1000, Number(payload?.retryAfterSeconds || 3) * 1000))
+          ));
+          continue;
+        }
+        setError(
+          payload?.messageZh ||
+          "The scoring service is temporarily unavailable. Your completed test is safe in this tab."
+        );
+        setScoreBusy(false);
+        setScreen("recovery");
+        return;
+      } catch {
+        if (attempt < clientAttempts) {
+          setScoringMessage("The connection was interrupted — retrying safely");
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          continue;
+        }
+        setError("The connection was interrupted. Your completed test is safe in this tab.");
+        setScoreBusy(false);
+        setScreen("recovery");
+        return;
+      }
+    }
+  }
+
   async function finishTest() {
     setScreen("analysing");
     setStatus("uploading");
+    setScoringMessage("Finishing the last answer analyses");
     const settled = await Promise.all(analysesRef.current);
-    const response = await fetch("/api/score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId: crypto.randomUUID(),
-        testId: selectedId,
-        completedAt: new Date().toISOString(),
-        analyses: settled
-      })
-    });
-    if (!response.ok) {
-      setError("Scoring could not be completed. Please keep this page open and try again.");
-      setScreen("home");
-      return;
-    }
-    const scored = await response.json();
-    setResult(scored);
-    localStorage.setItem("tb-speaking-latest-summary", JSON.stringify({
-      testId: selectedId,
-      date: new Date().toISOString(),
-      overall: scored.overall ?? null,
-      subBands: scored.subBands ?? null
+    const repaired = await Promise.all(settled.map(async (analysis) => {
+      if (analysis.quality !== "insufficient") return analysis;
+      const rawTurn = pendingTurnsRef.current.get(analysis.turnId);
+      return rawTurn ? uploadTurn(rawTurn, 1) : analysis;
     }));
-    setScreen("result");
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+    const scorePackage: ScorePackage = {
+      sessionId: sessionIdRef.current || crypto.randomUUID(),
+      testId: selectedId,
+      completedAt: new Date().toISOString(),
+      analyses: repaired
+    };
+    persistPendingScore(scorePackage);
+    stopMicrophone();
+    await submitScore(scorePackage, true);
   }
 
   function abortTest() {
@@ -345,8 +481,19 @@ export default function Home() {
     recorderRef.current?.state === "recording" && recorderRef.current.stop();
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    pendingTurnsRef.current.clear();
+    analysesRef.current = [];
+    stopMicrophone();
     setScreen("home");
     setStatus("idle");
+  }
+
+  function discardPendingTest() {
+    clearPendingScore();
+    setError("");
+    setResult(null);
+    sessionIdRef.current = "";
+    setScreen("home");
   }
 
   async function playFeedback() {
@@ -388,12 +535,43 @@ export default function Home() {
           <div className="analysis-orb" aria-hidden="true"><span /><span /><span /></div>
           <p className="eyebrow">Evidence review in progress</p>
           <h1>Analysing your speaking</h1>
-          <p className="muted max-copy">Your answers are being checked across all four criteria. Keep this page open.</p>
+          <p className="muted max-copy">{scoringMessage}. Keep this page open.</p>
           <div className="analysis-steps">
             <span><Check size={17} /> Three-part evidence</span>
             <span><Check size={17} /> Direct pronunciation audio</span>
             <span><Check size={17} /> Two independent evaluations</span>
           </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === "recovery" && pendingScore) {
+    return (
+      <main className="shell">
+        <section className="exam-panel centred-panel recovery-panel">
+          <div className="recovery-mark" aria-hidden="true"><ShieldCheck size={34} /></div>
+          <p className="eyebrow">Completed test protected · {pendingScore.testId}</p>
+          <h1>Scoring temporarily paused</h1>
+          <p className="muted max-copy">
+            Your interview evidence is still saved in this tab. You do not need to repeat the test.
+          </p>
+          {error && <p className="recovery-message">{error}</p>}
+          <div className="recovery-actions">
+            <button
+              className="primary"
+              disabled={scoreBusy}
+              onClick={() => submitScore(pendingScore, false)}
+            >
+              <RefreshCw size={18} />{scoreBusy ? "Retrying…" : "Retry scoring"}
+            </button>
+            <button className="secondary" onClick={discardPendingTest}>
+              <Trash2 size={17} />Discard test
+            </button>
+          </div>
+          <small className="recovery-note">
+            Only transcripts and scoring evidence are kept in this browser tab. Recordings are not stored here.
+          </small>
         </section>
       </main>
     );
@@ -422,7 +600,7 @@ export default function Home() {
               <button className="primary" onClick={playFeedback}><Volume2 size={18} />{feedbackPlaying ? "正在播放" : "听中文点评"}</button>
             )}
             <button className="secondary" onClick={downloadReport}><Download size={18} />Download report</button>
-            <button className="secondary" onClick={() => { setResult(null); setScreen("home"); }}><RotateCcw size={18} />Try another test</button>
+            <button className="secondary" onClick={discardPendingTest}><RotateCcw size={18} />Try another test</button>
           </div>
         </section>
 

@@ -43,8 +43,24 @@ export type TurnAnalysis = {
   audioEvidence: Array<{
     start: number;
     end: number;
+    polarity: "strength" | "limitation";
     audio_feature: string;
     note: string;
   }>;
+  performanceCounts: {
+    approximateWords: number;
+    falseStartOrRepairClusters: number;
+    clearCoherenceLosses: number;
+    successfulComplexSentences: number;
+    flawedComplexAttempts: number;
+    notableLessCommonOrIdiomaticItems: number;
+  };
   quality: "good" | "limited" | "insufficient";
+};
+
+export type ScorePackage = {
+  sessionId: string;
+  testId: string;
+  completedAt: string;
+  analyses: TurnAnalysis[];
 };

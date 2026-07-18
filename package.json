@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/*.test.mjs && python3 scripts/verify_dataset.py && python3 scripts/verify_examiner_audio.py && python3 scripts/verify_calibration.py"
+    "test": "node --test tests/*.test.mjs && tsx --test tests/*.test.ts && python3 scripts/verify_dataset.py && python3 scripts/verify_examiner_audio.py && python3 scripts/verify_calibration.py"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -19,6 +19,7 @@
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "tsx": "^4.23.1",
     "typescript": "^5.8.3"
   }
 }
