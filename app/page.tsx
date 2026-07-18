@@ -359,10 +359,11 @@ export default function Home() {
         body: JSON.stringify({ text: result.spokenFeedbackZh })
       });
       if (!response.ok) throw new Error();
-      const { audioUri } = await response.json();
-      const audio = new Audio(audioUri);
+      const url = URL.createObjectURL(await response.blob());
+      const audio = new Audio(url);
       audio.onended = () => {
         setFeedbackPlaying(false);
+        URL.revokeObjectURL(url);
       };
       await audio.play();
     } catch {

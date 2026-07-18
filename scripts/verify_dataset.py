@@ -7,13 +7,14 @@ def main():
     root = Path(__file__).resolve().parents[1]
     bank = json.loads((root / "data/topic-bank.json").read_text(encoding="utf-8"))
     sets = json.loads((root / "public/data/mock-tests.json").read_text(encoding="utf-8"))
-    # Verify counts match the topic bank structure
-    assert bank["counts"]["part1"] == len(bank["part1"])
-    assert bank["counts"]["part2"] == len(bank["part2"])
-    assert bank["counts"]["part3"] == len(bank["part3"])
-    assert bank["counts"]["part1Prompts"] == sum(len(g["prompts"]) for g in bank["part1"])
-    assert bank["counts"]["part2Prompts"] == sum(len(g["prompts"]) for g in bank["part2"])
-    assert bank["counts"]["part3Prompts"] == sum(len(g["prompts"]) for g in bank["part3"])
+    assert bank["counts"] == {
+        "part1": 50,
+        "part2": 128,
+        "part3": 64,
+        "part1Prompts": 380,
+        "part2Prompts": 643,
+        "part3Prompts": 587,
+    }
     assert sets["testCount"] == 128
     assert [item["id"] for item in sets["tests"]] == [f"TEST-{i:03d}" for i in range(1, 129)]
     source_p1 = {prompt for group in bank["part1"] for prompt in group["prompts"]}

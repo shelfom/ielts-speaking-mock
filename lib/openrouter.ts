@@ -30,70 +30,59 @@ export async function chatJson(messages: unknown[], model = process.env.OPENROUT
   return JSON.parse(content.replace(/^```json\s*|\s*```$/g, ""));
 }
 
-export async function createSpeech(text: string): Promise<{ audioUri: string; audioSize: number }> {
-  const baseUrl = process.env.COZE_INTEGRATION_BASE_URL || "https://integration.coze.cn";
-  const token = process.env.COZE_WORKLOAD_IDENTITY_API_KEY || process.env.COZE_LOOP_API_TOKEN;
-  if (!token) throw new Error("Coze API token not configured");
+export async function createSpeech(text: string): Promise<ArrayBuffer> {
+  const baseUrl = process.env.COZE_INTEGRATION_BASE_URL;
+  const apiKeyVal = process.env.COZE_WORKLOAD_IDENTITY_API_KEY;
+  if (!baseUrl || !apiKeyVal) throw new Error("Coze TTS environment not configured");
 
   const response = await fetch(`${baseUrl}/api/v3/tts/unidirectional`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${apiKeyVal}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      req_params: {
-        audio_params: { format: "mp3", sample_rate: 24000, speech_rate: 0, loudness_rate: 0 },
-        text,
-        speaker: "zh_female_xiaohe_uranus_bigtts"
-      }
+      input: text,
+      voice_id: "zh_female_shuangkuai",
+      response_format: "mp3",
+      speed: 1.0,
+      sample_rate: 24000
     }),
     signal: AbortSignal.timeout(120000)
   });
-  if (!response.ok) throw new Error(`TTS ${response.status}: ${await response.text()}`);
+  if (!response.ok) throw new Error(`Coze TTS ${response.status}: ${await response.text()}`);
 
-  // Parse SSE stream to collect audio data
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("TTS stream missing body");
+  if (!reader) throw new Error("No response body from Coze TTS");
+
   const decoder = new TextDecoder();
-  let buffer = "";
-  let audioUri = "";
-  let audioSize = 0;
   let audioData = "";
+  let buffer = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
+
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
+
     for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const raw = line.slice(5).trim();
-      if (!raw) continue;
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (!payload || payload === "[DONE]") continue;
       try {
-        const event = JSON.parse(raw);
-        const evt = event?.data;
-        // Check for audio URL (if provided)
-        if (evt?.audio?.audio_url) {
-          audioUri = evt.audio.audio_url;
-          audioSize = evt.audio.audio_size || 0;
+        const evt = JSON.parse(payload);
+        if (evt?.data && typeof evt.data === "string" && evt.data.length > 100) {
+          audioData += evt.data;
         }
-        // Check for base64 audio data
-        if (typeof evt === "string" && evt.length > 100) {
-          audioData += evt;
-        }
-      } catch { /* ignore partial JSON */ }
+      } catch {
+        // skip malformed SSE events
+      }
     }
-    if (audioUri) break;
   }
 
-  // If we have base64 audio data but no URL, create data URI
-  if (audioData && !audioUri) {
-    audioUri = `data:audio/mp3;base64,${audioData}`;
-    audioSize = Math.ceil((audioData.length * 3) / 4);
-  }
-
-  if (!audioUri) throw new Error("TTS stream missing audio data");
-  return { audioUri, audioSize };
+  if (!audioData) throw new Error("No audio data received from Coze TTS");
+  const binary = Uint8Array.from(atob(audioData), (c) => c.charCodeAt(0));
+  return binary.buffer;
 }

@@ -9,18 +9,15 @@ appliedPatches = [ ]
 required = true
 
 [env.OPENROUTER_AUDIO_MODEL]
-default = "mistralai/voxtral-small-24b-2507"
+default = "thinkingmachines/inkling"
 
 [env.OPENROUTER_SCORING_MODEL]
-default = "deepseek/deepseek-v4-flash"
+default = "qwen/qwen3.7-max"
 
 [dev]
-build = [ "bash", "./scripts/prepare.sh" ]
-run = [ "bash", "./scripts/dev.sh" ]
-validate = [ "bash", "./scripts/validate.sh" ]
-deps = [ "git" ]
+build = [ "pnpm", "install" ]
+run = [ "pnpm", "run", "dev" ]
 
 [deploy]
-build = [ "bash", "./scripts/build.sh" ]
-run = [ "bash", "./scripts/start.sh" ]
-deps = [ "git" ]
+build = [ "pnpm", "run", "build" ]
+run = [ "pnpm", "run", "start" ]

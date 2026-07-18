@@ -1,0 +1,168 @@
+{
+  "target": "within ±0.5 band",
+  "sample_count": 8,
+  "mean_absolute_error": 0.125,
+  "within_half_band_rate": 1.0,
+  "samples": [
+    {
+      "candidate": "Tina",
+      "official": 5.0,
+      "estimated": 5.0,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 5.0,
+        "LR": 5.0,
+        "GRA": 5.0,
+        "P": 5.0
+      },
+      "confidence": "medium",
+      "reasons": {
+        "FC": "Repeated false starts and self-corrections (e.g., 'the the', 'I will I will', 'I I') and temporal confusion cause coherence loss more than occasional; speech continues but repair clusters are frequent.",
+        "LR": "Narrow, repetitive vocabulary with frequent collocation errors (e.g., 'volunteers for shopping', 'work care'); only isolated correct less-common items; paraphrase is limited.",
+        "GRA": "Predominantly simple structures with frequent errors in verb forms and agreement (e.g., 'I can shopping', 'stress out is disappear'); complex attempts are flawed and limited.",
+        "P": "Generally intelligible but rhythm is flat and chunking often awkward (e.g., 'church and or'); limited intonation variety; falls short of controlled stress and appropriate chunking for Band 6."
+      }
+    },
+    {
+      "candidate": "Stephen",
+      "official": 6.0,
+      "estimated": 6.0,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 6.5,
+        "LR": 6.5,
+        "GRA": 6.0,
+        "P": 6.0
+      },
+      "confidence": "high",
+      "reasons": {
+        "FC": "Sustained turns with occasional coherence loss; language search sometimes damages coherence but candidate produces coherent long turns on familiar topics.",
+        "LR": "Sufficient for extended discussion with some less-common language (e.g., 'golden holiday', 'cut down the working shifts') and effective paraphrase, but some repetition and collocation errors.",
+        "GRA": "Mixed simple and complex forms with frequent grammatical errors (e.g., 'more easy', 'make trouble to the society'), though meaning is generally clear.",
+        "P": "Variable phonological control with some difficulty in word stress and connected speech, but generally intelligible with occasional clarity loss."
+      }
+    },
+    {
+      "candidate": "Michal",
+      "official": 6.5,
+      "estimated": 6.5,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 6.5,
+        "LR": 6.5,
+        "GRA": 6.0,
+        "P": 7.0
+      },
+      "confidence": "medium",
+      "reasons": {
+        "FC": "Sustained long turn with some language search and repetition, but coherence is maintained overall; no significant breakdown.",
+        "LR": "Sufficient vocabulary for extended discussion with some less-common items like 'pop icon' and 'feminism', but limited flexibility and some repetition.",
+        "GRA": "Mixed simple and compound sentences with some errors (e.g., 'And she's everyone knows her'), but meaning remains clear; complex forms are limited.",
+        "P": "Clear speech with good intonation and stress throughout; easy to understand with no clarity loss."
+      }
+    },
+    {
+      "candidate": "Hendrik",
+      "official": 7.0,
+      "estimated": 6.5,
+      "absolute_error": 0.5,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 6.5,
+        "LR": 6.5,
+        "GRA": 6.5,
+        "P": 6.5
+      },
+      "confidence": "medium",
+      "reasons": {
+        "FC": "Sustained turns with occasional hesitations and fillers (e.g., 'yeah', 'like'), but overall coherence is maintained; language search does not seriously disrupt meaning.",
+        "LR": "Sufficient vocabulary for extended discussion on familiar topics; uses some less-common items (e.g., 'financial crisis', 'role model') and paraphrases, though collocation errors and repetition occur.",
+        "GRA": "Mixes simple and complex structures with frequent error-free sentences (e.g., 'It's quite a good thing that they use a celebrity because he stands for something'), but also systematic errors (e.g., 'everything what happens', tense inconsistency) that rarely obscure meaning.",
+        "P": "Generally clear and intelligible with good stress and rhythm; slight accent does not impede understanding; occasional loss of clarity in rapid speech but mostly easy to follow."
+      }
+    },
+    {
+      "candidate": "Aashish",
+      "official": 7.5,
+      "estimated": 7.0,
+      "absolute_error": 0.5,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 7.0,
+        "LR": 7.0,
+        "GRA": 7.0,
+        "P": 7.0
+      },
+      "confidence": "high",
+      "reasons": {
+        "FC": "Coherence is maintained across extended turns despite frequent fillers; markers like 'I should say', 'undoubtedly', 'as far as I know', 'bit of both', 'other than that', 'I would still say', and 'like I said before' are natural and discourse-appropriate. Fillers are largely content-planning rather than language-search, matching the 7.5 anchor pattern where coherence is not meaningfully lost.",
+        "LR": "Flexible less-common language and effective paraphrase are evident: 'betterment of the country', 'take things for granted', 'misused their fame and power', 'undoubtedly', 'as far as I know'. Some repetition ('come into attention', 'famous people') and occasional imprecision prevent Band 8, but resource is clearly flexible across topics.",
+        "GRA": "Flexible range with conditional clauses ('if they really put themselves out'), present perfect ('we've become more advanced', 'I've been there'), and complex subordination ('because since the time we've entered into democracy'). Many error-free sentences coexist with some flawed complex attempts and minor errors (article omission, preposition strings), fitting Band 7 rather than 8.",
+        "P": "Speech is generally intelligible with adequate volume, pace, and contrastive intonation for temporal comparisons. Multi-syllabic words are articulated clearly. However, frequent filled pauses disrupt rhythm and some word boundaries are blurred, preventing sustained Band 8 phonological control."
+      }
+    },
+    {
+      "candidate": "Monika",
+      "official": 8.0,
+      "estimated": 8.0,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 8.0,
+        "LR": 8.0,
+        "GRA": 8.0,
+        "P": 8.0
+      },
+      "confidence": "high",
+      "reasons": {
+        "FC": "Long turns are sustained and logically developed (problem-cause-effect in t3, t5) with natural discourse markers; repetitions and false starts occur but do not cause meaningful coherence loss.",
+        "LR": "Flexible use of less-common items and collocations ('anchor point', 'stress relief', 'regular working hours', 'good insight into', 'focused on their careers') with effective paraphrase across topics; occasional imprecision ('do hobby', 'survive basically') prevents Band 8.",
+        "GRA": "Flexible mix of simple and complex forms including conditionals, subordinate clauses, and modals with frequent error-free sentences; systematic minor errors (article omission, 'open up yourself', 'isn't that what it was') prevent Band 8.",
+        "P": "Generally clear articulation and appropriate sentence stress on content words with intelligible long turns; variable chunking, intra-word pauses, and occasional flat intonation prevent sustained Band 8 phonological control."
+      }
+    },
+    {
+      "candidate": "Kenn",
+      "official": 8.5,
+      "estimated": 8.5,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 8.0,
+        "LR": 9.0,
+        "GRA": 8.5,
+        "P": 8.5
+      },
+      "confidence": "high",
+      "reasons": {
+        "FC": "Long turns are sustained and coherent with natural discourse markers ('other than that', 'mainly because', 'for example'); occasional 'um' fillers and brief self-corrections do not damage coherence or cause meaningful breakdown.",
+        "LR": "Flexible use of less-common vocabulary ('prominent', 'repercussions', 'susceptible', 'prevalent', 'emulate', 'anorexia', 'bulimia') and effective paraphrase; some vague phrasing ('a lot', 'a certain status') prevents a higher band.",
+        "GRA": "Wide range of complex structures with frequent error-free sentences (e.g., long conditional and causal clauses in t4, t6); occasional minor errors ('is all for', tense choices) are non-systematic and do not impede meaning.",
+        "P": "Clear and generally easy to understand with effective stress, intonation, and connected speech; occasional mispronunciations and slight rhythm lapses prevent sustained Band 8 control."
+      }
+    },
+    {
+      "candidate": "Anuradha",
+      "official": 9.0,
+      "estimated": 9.0,
+      "absolute_error": 0.0,
+      "within_half_band": true,
+      "sub_bands": {
+        "FC": 9.0,
+        "LR": 9.0,
+        "GRA": 9.0,
+        "P": 9.0
+      },
+      "confidence": "high",
+      "reasons": {
+        "FC": "Long turns are sustained and logically developed (e.g., t7 on body image, t9 on materialism and PETA) with natural discourse markers ('other than that', 'as you can see', 'whilst'). Hesitation and fillers ('you know', 'like', 'I think') are frequent but serve content planning rather than causing coherence loss; ideas flow without breakdown.",
+        "LR": "Flexible use of less-common and idiomatic items across topics: 'communication tool', 'globalized', 'be exposed to', 'the norm', 'strikes a chord', 'materialistically', 'grasp of people's mindset', 'anorexia', 'bulimia', 'consumerism'. Some minor imprecision ('communication tool' for medium, 'endangered animals' for species) prevents Band 8 skilful precision.",
+        "GRA": "Wide range of complex structures with the majority error-free: conditionals ('if you're talking about the 50s and 60s'), relative clauses ('that's the kind of product that they tend to promote'), passive voice ('are stripped', 'are used'), and subordinate clauses ('because they think being thin is a norm', 'whilst being healthy is actually the norm'). Only occasional non-systematic errors (e.g., 'whereby actually it should be').",
+        "P": "Audio evidence indicates appropriate stress, intonation, rhythm, and pace with effective use of pauses for emphasis and thought organization. Linking and blending are generally appropriate. Understanding is easy throughout despite some filler frequency."
+      }
+    }
+  ]
+}

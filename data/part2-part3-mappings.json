@@ -1,0 +1,644 @@
+{
+  "mappings": [
+    {
+      "part2": 0,
+      "part3": 2,
+      "reason": "Both focus on advertising and its influence on consumer behavior."
+    },
+    {
+      "part2": 1,
+      "part3": 0,
+      "reason": "Both discuss challenges and how people handle difficult tasks."
+    },
+    {
+      "part2": 2,
+      "part3": 21,
+      "reason": "Both involve describing an older person, often a family member, and family relationships."
+    },
+    {
+      "part2": 3,
+      "part3": 42,
+      "reason": "Both relate to children and parenting, discussing child development and interaction."
+    },
+    {
+      "part2": 4,
+      "part3": 31,
+      "reason": "Both focus on influential people and their impact on others, especially role models."
+    },
+    {
+      "part2": 5,
+      "part3": 31,
+      "reason": "Both discuss interesting people and their influence or characteristics."
+    },
+    {
+      "part2": 6,
+      "part3": 31,
+      "reason": "Both involve describing an intelligent person and their influence."
+    },
+    {
+      "part2": 7,
+      "part3": 15,
+      "reason": "Both relate to teachers and education, discussing teaching methods and school experiences."
+    },
+    {
+      "part2": 8,
+      "part3": 24,
+      "reason": "Both focus on childhood friends and the importance of friendships."
+    },
+    {
+      "part2": 9,
+      "part3": 63,
+      "reason": "Both discuss people who love growing plants, vegetables, and gardening."
+    },
+    {
+      "part2": 10,
+      "part3": 58,
+      "reason": "Both involve giving presents and the value of possessions."
+    },
+    {
+      "part2": 11,
+      "part3": 58,
+      "reason": "Both involve giving presents and the significance of gifts."
+    },
+    {
+      "part2": 12,
+      "part3": 58,
+      "reason": "Both discuss receiving gifts and the importance of possessions."
+    },
+    {
+      "part2": 13,
+      "part3": 15,
+      "reason": "Both focus on learning from others and the role of teachers/mentors in education."
+    },
+    {
+      "part2": 14,
+      "part3": 3,
+      "reason": "Both discuss interesting animals and attitudes towards pets and wildlife."
+    },
+    {
+      "part2": 15,
+      "part3": 4,
+      "reason": "Both relate to art, specifically paintings, and personal preferences in art."
+    },
+    {
+      "part2": 16,
+      "part3": 59,
+      "reason": "Both focus on apologies, when they happen, and who tends to apologize."
+    },
+    {
+      "part2": 17,
+      "part3": 5,
+      "reason": "Both discuss reading books, current reading habits, and the impact of e-books."
+    },
+    {
+      "part2": 18,
+      "part3": 5,
+      "reason": "Both involve books, reading preferences, and future reading plans."
+    },
+    {
+      "part2": 19,
+      "part3": 5,
+      "reason": "Both discuss recently read books and reading habits."
+    },
+    {
+      "part2": 20,
+      "part3": 8,
+      "reason": "Both focus on buildings and what makes a good city or living environment."
+    },
+    {
+      "part2": 21,
+      "part3": 6,
+      "reason": "Both discuss starting a small business and business growth."
+    },
+    {
+      "part2": 22,
+      "part3": 6,
+      "reason": "Both focus on successful small businesses and business practices."
+    },
+    {
+      "part2": 23,
+      "part3": 7,
+      "reason": "Both discuss positive changes in life and how change affects people."
+    },
+    {
+      "part2": 24,
+      "part3": 9,
+      "reason": "Both relate to clothing, fashion, and personal style."
+    },
+    {
+      "part2": 25,
+      "part3": 9,
+      "reason": "Both discuss uniforms and clothing in specific contexts like school or work."
+    },
+    {
+      "part2": 26,
+      "part3": 8,
+      "reason": "Both focus on cities, what makes them good to live in, and urban advantages."
+    },
+    {
+      "part2": 27,
+      "part3": 10,
+      "reason": "Both discuss organizations or companies and their characteristics."
+    },
+    {
+      "part2": 28,
+      "part3": 11,
+      "reason": "Both relate to daily routines and what makes people happy."
+    },
+    {
+      "part2": 29,
+      "part3": 12,
+      "reason": "Both focus on important decisions and the decision-making process."
+    },
+    {
+      "part2": 30,
+      "part3": 57,
+      "reason": "Both discuss electronic devices and technology, including useful inventions."
+    },
+    {
+      "part2": 31,
+      "part3": 57,
+      "reason": "Both involve electronic equipment and its role in daily life."
+    },
+    {
+      "part2": 32,
+      "part3": 57,
+      "reason": "Both focus on useful electronic equipment and technology."
+    },
+    {
+      "part2": 33,
+      "part3": 16,
+      "reason": "Both relate to entertainment, specifically comedians and performances."
+    },
+    {
+      "part2": 34,
+      "part3": 62,
+      "reason": "Both discuss TV shows and television programming."
+    },
+    {
+      "part2": 35,
+      "part3": 16,
+      "reason": "Both focus on performances and live entertainment experiences."
+    },
+    {
+      "part2": 36,
+      "part3": 17,
+      "reason": "Both discuss environmental problems and concerns."
+    },
+    {
+      "part2": 37,
+      "part3": 26,
+      "reason": "Both relate to exercise and health improvement."
+    },
+    {
+      "part2": 38,
+      "part3": 20,
+      "reason": "Both discuss exciting experiences and adventurous activities."
+    },
+    {
+      "part2": 39,
+      "part3": 21,
+      "reason": "Both focus on family gatherings and family relationships."
+    },
+    {
+      "part2": 40,
+      "part3": 21,
+      "reason": "Both discuss family members and getting along with relatives."
+    },
+    {
+      "part2": 41,
+      "part3": 21,
+      "reason": "Both involve describing a relative and family dynamics."
+    },
+    {
+      "part2": 42,
+      "part3": 21,
+      "reason": "Both focus on family members and spending time with them."
+    },
+    {
+      "part2": 43,
+      "part3": 23,
+      "reason": "Both discuss famous foods from a country or region."
+    },
+    {
+      "part2": 44,
+      "part3": 23,
+      "reason": "Both relate to memorable meals and eating habits."
+    },
+    {
+      "part2": 45,
+      "part3": 47,
+      "reason": "Both focus on eating out at restaurants and dining experiences."
+    },
+    {
+      "part2": 46,
+      "part3": 24,
+      "reason": "Both discuss important friends and the role of friendship."
+    },
+    {
+      "part2": 47,
+      "part3": 24,
+      "reason": "Both focus on childhood friends and early friendships."
+    },
+    {
+      "part2": 48,
+      "part3": 25,
+      "reason": "Both discuss furniture and decisions about buying furniture."
+    },
+    {
+      "part2": 49,
+      "part3": 35,
+      "reason": "Both relate to leisure activities like visiting gardens or parks."
+    },
+    {
+      "part2": 50,
+      "part3": 26,
+      "reason": "Both discuss illness, injury, and health experiences."
+    },
+    {
+      "part2": 51,
+      "part3": 26,
+      "reason": "Both focus on healthy activities and health improvement."
+    },
+    {
+      "part2": 52,
+      "part3": 26,
+      "reason": "Both discuss health-related articles and health information."
+    },
+    {
+      "part2": 53,
+      "part3": 27,
+      "reason": "Both focus on helping others and willingness to help."
+    },
+    {
+      "part2": 54,
+      "part3": 28,
+      "reason": "Both discuss historical places and the importance of history."
+    },
+    {
+      "part2": 55,
+      "part3": 35,
+      "reason": "Both relate to childhood leisure activities and free time."
+    },
+    {
+      "part2": 56,
+      "part3": 29,
+      "reason": "Both discuss holiday activities and vacation preferences."
+    },
+    {
+      "part2": 57,
+      "part3": 29,
+      "reason": "Both focus on holiday experiences and travel."
+    },
+    {
+      "part2": 58,
+      "part3": 29,
+      "reason": "Both discuss dream holidays and travel aspirations."
+    },
+    {
+      "part2": 59,
+      "part3": 45,
+      "reason": "Both involve future plans, specifically holiday planning."
+    },
+    {
+      "part2": 60,
+      "part3": 30,
+      "reason": "Both discuss ideal homes and moving to a new place."
+    },
+    {
+      "part2": 61,
+      "part3": 8,
+      "reason": "Both focus on important buildings in a hometown or city."
+    },
+    {
+      "part2": 62,
+      "part3": 13,
+      "reason": "Both discuss desired changes to local areas and community."
+    },
+    {
+      "part2": 63,
+      "part3": 32,
+      "reason": "Both relate to websites and internet usage."
+    },
+    {
+      "part2": 64,
+      "part3": 15,
+      "reason": "Both discuss language learning methods and education."
+    },
+    {
+      "part2": 65,
+      "part3": 5,
+      "reason": "Both involve English language books and reading."
+    },
+    {
+      "part2": 66,
+      "part3": 15,
+      "reason": "Both discuss language tests and education assessment."
+    },
+    {
+      "part2": 67,
+      "part3": 17,
+      "reason": "Both focus on natural features like lakes/rivers and environment."
+    },
+    {
+      "part2": 68,
+      "part3": 34,
+      "reason": "Both discuss being late and attitudes towards punctuality."
+    },
+    {
+      "part2": 69,
+      "part3": 36,
+      "reason": "Both focus on household appliances and machines."
+    },
+    {
+      "part2": 70,
+      "part3": 37,
+      "reason": "Both discuss forgetting important things and memory."
+    },
+    {
+      "part2": 71,
+      "part3": 37,
+      "reason": "Both relate to childhood memories and happy events."
+    },
+    {
+      "part2": 72,
+      "part3": 38,
+      "reason": "Both discuss mobile phone usage and regulations."
+    },
+    {
+      "part2": 73,
+      "part3": 39,
+      "reason": "Both focus on money and financial decisions."
+    },
+    {
+      "part2": 74,
+      "part3": 39,
+      "reason": "Both discuss low-cost special days and value of money."
+    },
+    {
+      "part2": 75,
+      "part3": 39,
+      "reason": "Both involve saving money to buy something special."
+    },
+    {
+      "part2": 76,
+      "part3": 40,
+      "reason": "Both discuss musical instruments and music preferences."
+    },
+    {
+      "part2": 77,
+      "part3": 40,
+      "reason": "Both focus on favorite songs and music."
+    },
+    {
+      "part2": 78,
+      "part3": 41,
+      "reason": "Both discuss interesting news and how people get news."
+    },
+    {
+      "part2": 79,
+      "part3": 41,
+      "reason": "Both focus on good news and receiving news."
+    },
+    {
+      "part2": 80,
+      "part3": 41,
+      "reason": "Both discuss people in the news and media figures."
+    },
+    {
+      "part2": 81,
+      "part3": 42,
+      "reason": "Both focus on good parents and parenting."
+    },
+    {
+      "part2": 82,
+      "part3": 43,
+      "reason": "Both discuss parties and what makes a good party."
+    },
+    {
+      "part2": 83,
+      "part3": 43,
+      "reason": "Both focus on birthday parties and celebrations."
+    },
+    {
+      "part2": 84,
+      "part3": 22,
+      "reason": "Both discuss festivals and traditional celebrations."
+    },
+    {
+      "part2": 85,
+      "part3": 22,
+      "reason": "Both focus on favorite festivals and their importance."
+    },
+    {
+      "part2": 86,
+      "part3": 8,
+      "reason": "Both discuss crowded places and urban life."
+    },
+    {
+      "part2": 87,
+      "part3": 45,
+      "reason": "Both involve weekend plans and planning."
+    },
+    {
+      "part2": 88,
+      "part3": 45,
+      "reason": "Both discuss future plans after achieving a goal."
+    },
+    {
+      "part2": 89,
+      "part3": 45,
+      "reason": "Both focus on goals and ambitions."
+    },
+    {
+      "part2": 90,
+      "part3": 37,
+      "reason": "Both discuss photographs and memories."
+    },
+    {
+      "part2": 91,
+      "part3": 46,
+      "reason": "Both discuss products produced in a country, including local goods."
+    },
+    {
+      "part2": 92,
+      "part3": 5,
+      "reason": "Both focus on favorite books and reading."
+    },
+    {
+      "part2": 93,
+      "part3": 47,
+      "reason": "Both discuss restaurants and eating out."
+    },
+    {
+      "part2": 94,
+      "part3": 48,
+      "reason": "Both discuss traffic rules and societal rules."
+    },
+    {
+      "part2": 95,
+      "part3": 48,
+      "reason": "Both focus on school rules and discipline."
+    },
+    {
+      "part2": 96,
+      "part3": 49,
+      "reason": "Both discuss schools and education experiences."
+    },
+    {
+      "part2": 97,
+      "part3": 15,
+      "reason": "Both discuss future study subjects and education."
+    },
+    {
+      "part2": 98,
+      "part3": 50,
+      "reason": "Both focus on areas of science and their importance."
+    },
+    {
+      "part2": 99,
+      "part3": 50,
+      "reason": "Both discuss scientific subjects learned in school."
+    },
+    {
+      "part2": 100,
+      "part3": 51,
+      "reason": "Both discuss shopping streets and shopping habits."
+    },
+    {
+      "part2": 101,
+      "part3": 51,
+      "reason": "Both focus on shops and shopping in local areas."
+    },
+    {
+      "part2": 102,
+      "part3": 52,
+      "reason": "Both discuss city problems and social issues."
+    },
+    {
+      "part2": 103,
+      "part3": 53,
+      "reason": "Both discuss things that are difficult to use, especially for different age groups."
+    },
+    {
+      "part2": 104,
+      "part3": 54,
+      "reason": "Both discuss sports and their benefits."
+    },
+    {
+      "part2": 105,
+      "part3": 54,
+      "reason": "Both focus on sports people haven't tried and sports popularity."
+    },
+    {
+      "part2": 106,
+      "part3": 54,
+      "reason": "Both discuss sports that interest people but they haven't tried."
+    },
+    {
+      "part2": 107,
+      "part3": 54,
+      "reason": "Both focus on sporting events and sports experiences."
+    },
+    {
+      "part2": 108,
+      "part3": 15,
+      "reason": "Both discuss the best teachers and education."
+    },
+    {
+      "part2": 109,
+      "part3": 37,
+      "reason": "Both discuss important text messages and communication."
+    },
+    {
+      "part2": 110,
+      "part3": 58,
+      "reason": "Both focus on important possessions and their value."
+    },
+    {
+      "part2": 111,
+      "part3": 60,
+      "reason": "Both discuss traditional products and their popularity."
+    },
+    {
+      "part2": 112,
+      "part3": 61,
+      "reason": "Both discuss transportation systems and travel."
+    },
+    {
+      "part2": 113,
+      "part3": 61,
+      "reason": "Both focus on means of transportation and usage."
+    },
+    {
+      "part2": 114,
+      "part3": 61,
+      "reason": "Both discuss trips by public transport and travel experiences."
+    },
+    {
+      "part2": 115,
+      "part3": 61,
+      "reason": "Both focus on journeys and travel."
+    },
+    {
+      "part2": 116,
+      "part3": 29,
+      "reason": "Both discuss tourist attractions and holiday activities."
+    },
+    {
+      "part2": 117,
+      "part3": 29,
+      "reason": "Both discuss places to visit within one's country."
+    },
+    {
+      "part2": 118,
+      "part3": 29,
+      "reason": "Both discuss foreign countries and travel aspirations."
+    },
+    {
+      "part2": 119,
+      "part3": 29,
+      "reason": "Both focus on countries to visit in the future."
+    },
+    {
+      "part2": 120,
+      "part3": 62,
+      "reason": "Both discuss TV programs and viewing habits."
+    },
+    {
+      "part2": 121,
+      "part3": 63,
+      "reason": "Both discuss plants, vegetables, and gardening."
+    },
+    {
+      "part2": 122,
+      "part3": 17,
+      "reason": "Both discuss weather-related problems and environment."
+    },
+    {
+      "part2": 123,
+      "part3": 33,
+      "reason": "Both discuss dream jobs and career aspirations."
+    },
+    {
+      "part2": 124,
+      "part3": 33,
+      "reason": "Both focus on dream workplaces and job preferences."
+    },
+    {
+      "part2": 125,
+      "part3": 33,
+      "reason": "Both discuss jobs of family members and career topics."
+    },
+    {
+      "part2": 126,
+      "part3": 33,
+      "reason": "Both discuss workplaces and work environments."
+    },
+    {
+      "part2": 127,
+      "part3": 33,
+      "reason": "Both focus on future jobs and career plans."
+    }
+  ]
+}

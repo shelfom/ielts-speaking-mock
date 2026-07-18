@@ -7,34 +7,39 @@
 ## 核心目录
 
 ```
-src/
-├── app/
-│   ├── api/
-│   │   ├── analyse-turn/route.ts  # 单轮音频分析 (Coze ASR + LLM)
-│   │   ├── score/route.ts         # 双评估器评分 + 仲裁 (Coze LLM)
-│   │   └── feedback-audio/route.ts # Mandarin TTS 语音反馈 (Coze TTS)
-│   ├── page.tsx                    # 主考试页面 (client component)
-│   ├── layout.tsx                  # 根布局
-│   └── globals.css                 # 全局样式 + 设计 tokens
-├── lib/
-│   ├── audio.ts                    # blobToMonoWav + preferredMimeType
-│   ├── openrouter.ts               # Coze 集成 API 封装 (chatJson + asrTranscribe + createSpeech)
-│   ├── rubric.ts                   # IELTS 评分标准 + OUTPUT_CONTRACT + roundHalf
-│   └── types.ts                    # 核心类型定义
+app/
+├── api/
+│   ├── analyse-turn/route.ts  # 单轮音频分析 (OpenRouter input_audio)
+│   ├── score/route.ts         # 双评估器评分 + 仲裁 (OpenRouter LLM)
+│   └── feedback-audio/route.ts # Mandarin TTS 语音反馈 (Coze TTS)
+├── page.tsx                    # 主考试页面 (client component)
+├── layout.tsx                  # 根布局
+└── globals.css                 # 全局样式 + 设计 tokens
+lib/
+├── audio.ts                    # blobToMonoWav + preferredMimeType
+├── openrouter.ts               # API 封装 (chatJson via OpenRouter + createSpeech via Coze TTS)
+├── rubric.ts                   # IELTS 评分标准 + OUTPUT_CONTRACT + roundHalf
+└── types.ts                    # 核心类型定义
 public/
 ├── data/
-│   ├── mock-tests.json             # 128 套完整测试题
-│   └── examiner-audio.json         # 691 条 en-GB-SoniaNeural 考官音频映射
-└── audio/examiner/                 # 691 个预生成 MP3 文件
+│   ├── mock-tests.json         # 128 套完整测试题
+│   └── examiner-audio.json     # 691 条 en-GB-SoniaNeural 考官音频映射
+└── audio/examiner/             # 691 个预生成 MP3 文件
 scripts/
-├── assemble_tests.py               # 题库组装
-├── build_topic_bank.py             # 主题库构建
-├── generate_examiner_audio.py      # 考官音频生成
-├── map_topics.py                   # 主题映射
-├── verify_dataset.py               # 数据集验证
-└── verify_examiner_audio.py        # 音频验证
+├── assemble_tests.py           # 题库组装
+├── build_topic_bank.py         # 主题库构建
+├── generate_examiner_audio.py  # 考官音频生成
+├── map_topics.py               # 主题映射
+├── verify_dataset.py           # 数据集验证
+├── verify_examiner_audio.py    # 音频验证
+└── verify_calibration.py       # 校准验证
 tests/
-└── contracts.test.mjs              # 契约测试 (128 tests, 691 audio)
+└── contracts.test.mjs          # 契约测试 (128 tests, 691 audio)
+calibration/
+└── results.json                # 校准结果 (8/8 within ±0.5)
+data/
+├── topic-bank.json             # 主题库
+└── part2-part3-mappings.json   # Part2-Part3 映射
 ```
 
 ## 考试流程
@@ -48,20 +53,19 @@ tests/
 
 | 路径 | 方法 | 说明 |
 |------|------|------|
-| `/api/analyse-turn` | POST (FormData) | 上传 WAV 音频，Coze ASR 转写 + LLM 分析返回音频证据 |
+| `/api/analyse-turn` | POST (FormData) | 上传 WAV 音频，OpenRouter input_audio 直接分析返回音频证据 |
 | `/api/score` | POST (JSON) | 传入 analyses 数组，双评估器独立评分，>0.5 分差触发仲裁 |
-| `/api/feedback-audio` | POST (JSON) | 传入中文文本，Coze TTS 返回 MP3 音频 URI |
+| `/api/feedback-audio` | POST (JSON) | 传入中文文本，Coze TTS 返回 MP3 音频流 |
 
 ## 环境变量
 
 | 变量 | 说明 |
 |------|------|
-| `COZE_INTEGRATION_BASE_URL` | Coze 集成 API 基础 URL (自动注入) |
-| `COZE_INTEGRATION_MODEL_BASE_URL` | Coze 模型 API 基础 URL (自动注入) |
-| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze 工作负载认证密钥 (自动注入) |
-| `COZE_LOOP_API_TOKEN` | Coze Loop API Token (自动注入) |
-| `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: deepseek-v3-2-251201) |
-| `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: deepseek/deepseek-v4-flash) |
+| `OPENROUTER_API_KEY` | OpenRouter API 密钥 (用于 analyse-turn + score) |
+| `OPENROUTER_AUDIO_MODEL` | 音频分析模型 (默认: thinkingmachines/inkling) |
+| `OPENROUTER_SCORING_MODEL` | 评分模型 (默认: qwen/qwen3.7-max) |
+| `COZE_INTEGRATION_BASE_URL` | Coze 集成 API 基础 URL (自动注入, 用于 TTS) |
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze 工作负载认证密钥 (自动注入, 用于 TTS) |
 
 ## 设计系统
 
@@ -88,11 +92,12 @@ tests/
 ```
 ├── public/                 # 静态资源 (128 tests + 691 MP3)
 ├── scripts/                # 数据构建与验证脚本
-├── src/
-│   ├── app/                # 页面路由与 API
-│   └── lib/                # 工具库
+├── app/                    # 页面路由与 API
+├── lib/                    # 工具库
 ├── tests/                  # 契约测试
-├── next.config.ts          # Next.js 配置
+├── calibration/            # 校准结果
+├── data/                   # 主题库与映射
+├── next.config.mjs         # Next.js 配置
 ├── package.json            # 项目依赖管理
 └── tsconfig.json           # TypeScript 配置
 ```
