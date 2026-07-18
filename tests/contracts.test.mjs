@@ -43,7 +43,7 @@ test("completed scoring evidence survives transient provider failures", () => {
   );
 });
 
-test("two model families score independently and one call adjudicates all disputes", () => {
+test("two model families score independently and disputes resolve conservatively", () => {
   assert.match(scorer, /EVALUATOR_A_MODELS/);
   assert.match(scorer, /EVALUATOR_B_MODELS/);
   assert.match(scorer, /openai\/gpt-4\.1/);
@@ -51,12 +51,10 @@ test("two model families score independently and one call adjudicates all disput
   assert.match(scorer, /anthropic\/claude-sonnet-4\.5/);
   assert.match(scorer, /qwen\/qwen3\.6-flash/);
   assert.match(scorer, /disputedCriteria/);
-  assert.match(scorer, /adjudication\.results/);
+  assert.match(scorer, /保守裁决/);
   assert.match(scorer, /timeoutMs:\s*50000/);
-  assert.match(scorer, /timeoutMs:\s*25000/);
   assert.match(scorer, /maxAttempts:\s*1/);
   assert.match(scorer, /EVALUATION_DEADLINE/);
-  assert.match(scorer, /ADJUDICATION_DEADLINE/);
   assert.match(scorer, /reasoningEffort:\s*"none"/);
   assert.match(scorer, /responseMode:\s*"json_object"/);
 });

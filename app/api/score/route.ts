@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  adjudicationJsonSchema,
-  adjudicationValidator,
   criterionKeys,
   evaluatorJsonSchema,
   evaluatorValidator,
@@ -33,12 +31,6 @@ const EVALUATOR_B_MODELS = Array.from(new Set([
   "openai/gpt-4.1-mini",
   "anthropic/claude-sonnet-4.5"
 ]));
-const ADJUDICATOR_MODELS = Array.from(new Set([
-  process.env.OPENROUTER_ADJUDICATION_MODEL || "openai/gpt-4.1",
-  "anthropic/claude-sonnet-4.5",
-  "qwen/qwen3.7-max"
-]));
-
 const scorePackageValidator = z.object({
   sessionId: z.string().min(1),
   testId: z.string().min(1),
@@ -226,55 +218,6 @@ async function scoreEvaluator(
   }
 }
 
-async function adjudicate(
-  disputedCriteria: Criterion[],
-  a: EvaluatorContract,
-  b: EvaluatorContract,
-  session: ScorePackage,
-  signal?: AbortSignal
-) {
-  return chatJson([
-    {
-      role: "system",
-      content: "You are the final IELTS-style speaking score adjudicator. Return schema-valid JSON only."
-    },
-    {
-      role: "user",
-      content: `
-Resolve these disputed criteria in one pass: ${disputedCriteria.join(", ")}.
-For each criterion, use the lower band unless the candidate fully meets every decisive
-positive feature of the higher band. State which descriptor feature controls the decision.
-Return exactly one concise positive and one concise limiting evidence item per disputed
-criterion, and keep each reason under 80 Chinese characters.
-
-${RUBRIC}
-
-Evaluator A: ${JSON.stringify(a.criteria)}
-Evaluator B: ${JSON.stringify(b.criteria)}
-Session: ${JSON.stringify(session)}
-
-Return {"results":[{"criterion":"FC","band":6.5,"reason_zh":"...","positive_evidence":[{"turn_id":"p2-long","start":0,"end":4,"audio_feature":null,"note":"..."}],"limiting_evidence":[{"turn_id":"p3-q1","start":0,"end":4,"audio_feature":null,"note":"..."}]}]}
-`.trim()
-    }
-  ], {
-    models: ADJUDICATOR_MODELS,
-    operation: "score_adjudication",
-    sessionId: session.sessionId,
-    timeoutMs: 25000,
-    maxAttempts: 1,
-    maxTokens: 700,
-    reasoningEffort: "none",
-    requireParameters: false,
-    signal,
-    responseMode: "json_object",
-    contract: {
-      name: "ielts_speaking_adjudication",
-      schema: adjudicationJsonSchema,
-      parse: (value) => adjudicationValidator.parse(value)
-    }
-  });
-}
-
 const FEEDBACK_LIBRARY: Record<Criterion, {
   name: string;
   drill: string;
@@ -394,28 +337,17 @@ export async function POST(request: NextRequest) {
       }
     }
     if (disputedCriteria.length) {
-      const adjudicationController = new AbortController();
-      const adjudication = await withDeadline(
-        adjudicate(disputedCriteria, a, b, session, adjudicationController.signal),
-        20000,
-        "ADJUDICATION_DEADLINE",
-        () => adjudicationController.abort()
-      );
-      const byCriterion = new Map(
-        adjudication.results.map((item) => [item.criterion, item])
-      );
       for (const criterion of disputedCriteria) {
-        const final = byCriterion.get(criterion);
-        if (!final) {
-          throw new Error(`Adjudication omitted ${criterion}`);
-        }
+        const lowerEvaluator =
+          Number(a.criteria[criterion].band) <= Number(b.criteria[criterion].band)
+            ? a
+            : b;
+        const final = lowerEvaluator.criteria[criterion];
         subBands[criterion] = Number(final.band);
         criteria[criterion] = {
-          ...a.criteria[criterion],
+          ...final,
           band: Number(final.band),
-          why: final.reason_zh,
-          positive_evidence: final.positive_evidence,
-          limiting_evidence: final.limiting_evidence
+          why: `保守裁决：两位独立评估者相差超过0.5分，采用证据完整的较低档。${final.why}`
         };
       }
     }
