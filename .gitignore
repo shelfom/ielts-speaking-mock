@@ -27,6 +27,7 @@ storybook-static
 # Package manager artifacts
 .pnp*
 .npm
+pnpm-lock.yaml
 
 # Python tooling
 .pytest_cache/
