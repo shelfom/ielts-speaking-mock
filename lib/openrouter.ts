@@ -161,7 +161,7 @@ export async function chatJson<T>(
         headers: {
           Authorization: `Bearer ${apiKey()}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://jmw4nw2n85.coze.site",
+          "HTTP-Referer": process.env.PUBLIC_SITE_URL || "https://ielts-speaking-mock.coze.site",
           "X-Title": "TB IELTS Speaking Mock Examiner"
         },
         body: JSON.stringify(body),
