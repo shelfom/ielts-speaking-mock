@@ -214,15 +214,33 @@ select {
 
 footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 7px;
+  align-items: baseline;
+  gap: 2px 22px;
   color: #8b8693;
   font-size: 10px;
   letter-spacing: .03em;
   margin-top: auto;
+  font-variant-numeric: tabular-nums;
 }
 
-footer a { color: inherit; text-decoration: none; }
+footer a { color: var(--muted); text-decoration: none; white-space: nowrap; cursor: pointer; letter-spacing: .06em; }
+footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+footer a.copied::after { content: "已复制"; color: #8b8693; margin-left: 5px; letter-spacing: .1em; }
+footer .foot-hot { font-weight: 600; }
+footer .foot-mobiles { display: inline-flex; gap: 26px; }
+footer .foot-mobiles a:first-child::before {
+  content: "";
+  display: inline-block;
+  width: .95em;
+  height: .95em;
+  margin-right: 1.1em;
+  vertical-align: -.12em;
+  background-color: var(--ink);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79a15.1 15.1 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79a15.1 15.1 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 
 .live-shell { padding: clamp(8px, 2vw, 28px); }
 .live-panel {
@@ -455,7 +473,8 @@ footer a { color: inherit; text-decoration: none; }
   .device-check { margin: 15px 0; padding: 13px; }
   .check-actions { flex-wrap: wrap; }
   .micro-copy { margin-top: 8px; }
-  footer { font-size: 8px; }
+  footer { font-size: 9.5px; gap: 1px 14px; }
+  footer .foot-mobiles { flex-basis: 100%; justify-content: center; gap: 24px; }
 
   .live-shell { padding: 0; place-items: stretch; }
   .live-panel { height: 100dvh; min-height: 0; border-radius: 0; padding: max(15px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom)); box-shadow: none; }

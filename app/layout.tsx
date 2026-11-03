@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* TB counter: page views plus taps/hovers/copies on the data-who phone links */}
+        <Script src="https://jointuni.turtlebayedu.com/api/count.js?site=tools" strategy="afterInteractive" />
+      </body>
     </html>
   );
 }

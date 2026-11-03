@@ -774,5 +774,14 @@ function Evidence({ items, tone }: { items?: any[]; tone: "positive" | "limit" }
 }
 
 function Footer() {
-  return <footer>海归湾国际教育（天津）雅思精准学习中心 <a href="tel:4000616820">400-061-6820</a></footer>;
+  return (
+    <footer>
+      <span className="foot-brand">海归湾国际教育（天津）雅思精准学习中心</span>
+      <a className="foot-hot" href="tel:4000616820" data-who="400">400-061-6820</a>
+      <span className="foot-mobiles">
+        <a href="tel:18612530608" data-who="Stephanie">186 1253 0608</a>
+        <a href="tel:13803039029" data-who="Maggie">138 0303 9029</a>
+      </span>
+    </footer>
+  );
 }
